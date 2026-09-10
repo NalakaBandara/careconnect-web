@@ -1,22 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: oklch(0.5916 0.1068 180.77);
+  --primary-hover: oklch(0.52 0.095 180.77);
+  --primary-soft: oklch(0.965 0.021 180.77);
+  --accent: oklch(0.955 0.024 180.77);
+  --accent-foreground: oklch(0.42 0.08 180.77);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.19 0.008 200);
+  --surface: oklch(0.981 0.004 190);
+  --muted-foreground: oklch(0.49 0.011 205);
+  --secondary: oklch(0.968 0.004 200);
+  --secondary-foreground: oklch(0.24 0.01 200);
+  --border: oklch(0.918 0.005 200);
+  --border-strong: oklch(0.85 0.008 200);
+  --input: oklch(0.9 0.006 200);
+  --destructive: oklch(0.55 0.19 26);
+
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-primary:  var(--primary);
+  --color-primary-hover:  var(--primary-hover);
+  --color-primary-soft:  var(--primary-soft);
+  --color-accent:  var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-background:  var(--background);
+  --color-foreground:  var(--foreground);
+  --color-surface:  var(--surface);
+  --color-muted-foreground:  var(--muted-foreground);
+  --color-secondary:  var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-border:  var(--border);
+  --color-border-strong:  var(--border-strong);
+  --color-input:  var(--input);
+  --color-destructive: var(--destructive);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
