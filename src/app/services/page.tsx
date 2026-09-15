@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
 import { services } from "@/data/services";
+import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
   title: "Healthcare services",
@@ -19,10 +20,14 @@ export default function ServicesPage() {
 
       <section className="py-14">
         <div className="container-page grid gap-6 md:grid-cols-2">
-          {services.map((service) => (
-            <article
+          {services.map((service, index) => (
+            <Reveal
               key={service.slug}
+              // A small stagger reads as one movement rather than six.
+              // Capped so the last card is not left waiting.
+              delay={Math.min(index, 3) * 70}
               className="flex flex-col rounded-lg border border-border bg-background p-7 shadow-soft"
+              as="article"
             >
               <h2 className="font-serif text-2xl font-semibold">{service.name}</h2>
               <p className="mt-3 leading-relaxed text-muted-foreground">{service.description}</p>
@@ -44,7 +49,7 @@ export default function ServicesPage() {
               >
                 View professionals
               </Link>
-            </article>
+            </Reveal>
           ))}
         </div>
       </section>

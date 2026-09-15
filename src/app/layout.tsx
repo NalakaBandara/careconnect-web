@@ -29,6 +29,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${publicSans.variable} ${sourceSerif4.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Runs before the rest of the body is painted, so the scroll-reveal
+            CSS can hide things without ever flashing. It is also the switch
+            that keeps the page visible when JavaScript never arrives: with no
+            data-js attribute, nothing is hidden at all. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: `document.documentElement.dataset.js="on"` }}
+        />
         <SiteHeader />
         {children}
         <SiteFooter />

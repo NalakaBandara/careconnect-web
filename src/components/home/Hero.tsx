@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { buttonClasses } from "@/components/Button";
+import Parallax from "@/components/Parallax";
 
 export default function Hero() {
   return (
@@ -27,7 +28,9 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="relative">
+        {/* Only the image drifts. Moving body text as you scroll makes it
+            harder to read, which is the opposite of the point. */}
+        <Parallax speed={28} className="relative">
           <Image
             src="/hero-consultation.jpg"
             alt="A doctor in teal scrubs listening to an older patient during a clinic consultation"
@@ -43,7 +46,7 @@ export default function Hero() {
             </p>
             <p className="mt-1 font-serif text-2xl font-semibold text-primary">240+ clinics</p>
           </div>
-        </div>
+        </Parallax>
       </div>
     </section>
   );

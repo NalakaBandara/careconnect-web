@@ -6,18 +6,39 @@ import TrustSection from "@/components/home/TrustSection";
 import AboutSection from "@/components/home/AboutSection";
 import FaqSection from "@/components/home/FaqSection";
 import ContactSection from "@/components/home/ContactSection";
+import Reveal from "@/components/Reveal";
 
 export default function Home() {
   return (
     <main>
+      {/* The hero is above the fold, so it is not wrapped - animating what is
+          already on screen when the page loads just delays it. */}
       <Hero />
-      <FeaturedProfessionals />
-      <ServicesSection />
-      <HowItWorks />
-      <TrustSection />
-      <AboutSection />
-      <FaqSection />
-      <ContactSection />
+
+      {/* Each section below is a Server Component passed as children into a
+          Client Component. Only Reveal's own code reaches the browser; the
+          sections themselves still ship no JavaScript. */}
+      <Reveal>
+        <FeaturedProfessionals />
+      </Reveal>
+      <Reveal>
+        <ServicesSection />
+      </Reveal>
+      <Reveal>
+        <HowItWorks />
+      </Reveal>
+      <Reveal>
+        <TrustSection />
+      </Reveal>
+      <Reveal>
+        <AboutSection />
+      </Reveal>
+      <Reveal>
+        <FaqSection />
+      </Reveal>
+      <Reveal>
+        <ContactSection />
+      </Reveal>
     </main>
   );
 }
