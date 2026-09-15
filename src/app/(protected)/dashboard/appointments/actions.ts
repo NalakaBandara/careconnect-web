@@ -47,7 +47,7 @@ export async function cancelAppointmentAction(
   // The list is rendered from a no-store fetch, but the route itself can still
   // be held in the client-side Router Cache. This tells Next that anything
   // under /appointments is now stale.
-  revalidatePath("/appointments");
+  revalidatePath("/dashboard/appointments");
   return {};
 }
 
@@ -80,8 +80,8 @@ export async function rescheduleAppointmentAction(
     };
   }
 
-  revalidatePath("/appointments");
+  revalidatePath("/dashboard/appointments");
 
   // Outside any try/catch - redirect() signals by throwing.
-  redirect(`/appointments/${input.reference}?moved=1`);
+  redirect(`/dashboard/appointments/${input.reference}?moved=1`);
 }

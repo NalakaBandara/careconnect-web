@@ -36,14 +36,9 @@ export default function MobileNav({ isLoggedIn }: { isLoggedIn: boolean }) {
             </Link>
           ))}
           {isLoggedIn ? (
-            <>
-              <Link href="/appointments" className="rounded-md px-3 py-2 hover:bg-surface">
-                My Appointments
-              </Link>
-              <Link href="/dashboard" className="rounded-md px-3 py-2 hover:bg-surface">
-                Dashboard
-              </Link>
-            </>
+            <Link href="/dashboard" className="rounded-md px-3 py-2 hover:bg-surface">
+              Dashboard
+            </Link>
           ) : (
             <>
               <Link href="/login" className="rounded-md px-3 py-2 hover:bg-surface">

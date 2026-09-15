@@ -5,7 +5,7 @@ import Button from "@/components/Button";
 import {
   cancelAppointmentAction,
   type MutationState,
-} from "@/app/(protected)/appointments/actions";
+} from "@/app/(protected)/dashboard/appointments/actions";
 
 // Cancelling is destructive and cannot be undone, so it asks first. The
 // confirm step is also what stops a mis-click on a small screen from

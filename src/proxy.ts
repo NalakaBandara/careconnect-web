@@ -11,7 +11,7 @@ import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "careconnect_session";
 
-const NEEDS_LOGIN = ["/dashboard", "/admin", "/book", "/appointments"];
+const NEEDS_LOGIN = ["/dashboard", "/admin", "/book"];
 const NEEDS_ADMIN = ["/admin"];
 const GUEST_ONLY = ["/login", "/register"];
 

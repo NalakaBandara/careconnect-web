@@ -29,20 +29,11 @@ export default async function SiteHeader() {
             </Link>
           ))}
           {user && (
-            <>
-              <Link
-                href="/appointments"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                My Appointments
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Dashboard
-              </Link>
-            </>
+            // My Appointments lives in the dashboard sidebar now, so the top
+            // nav only needs the way in.
+            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">
+              Dashboard
+            </Link>
           )}
         </nav>
 

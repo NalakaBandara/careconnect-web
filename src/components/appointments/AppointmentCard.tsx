@@ -63,7 +63,7 @@ export default function AppointmentCard({
 
         <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <Link
-            href={`/appointments/${appointment.reference}`}
+            href={`/dashboard/appointments/${appointment.reference}`}
             className={buttonClasses("outline", "sm")}
           >
             View details

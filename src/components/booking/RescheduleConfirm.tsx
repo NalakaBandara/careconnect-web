@@ -6,7 +6,7 @@ import Button, { buttonClasses } from "@/components/Button";
 import {
   rescheduleAppointmentAction,
   type MutationState,
-} from "@/app/(protected)/appointments/actions";
+} from "@/app/(protected)/dashboard/appointments/actions";
 
 // A reschedule only needs a confirmation - the name, contact number and reason
 // were all given when the appointment was first booked. Asking again would be
