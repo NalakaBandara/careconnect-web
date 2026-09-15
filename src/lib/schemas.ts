@@ -24,3 +24,26 @@ export const loginSchema = z.object({
 // Types generated from the rules above, so the shape can never disagree.
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const bookingSchema = z.object({
+  fullName: z.string().trim().min(1, "Enter your full name"),
+  contactNumber: z
+    .string()
+    .trim()
+    .min(7, "Enter a contact number so the clinic can confirm")
+    .regex(/^[0-9+()\s-]+$/, "Use digits, spaces and + ( ) - only"),
+  reason: z.string().trim().min(1, "Tell the clinic the reason for your visit"),
+  notes: z.string().trim().max(500, "Please keep this under 500 characters"),
+  // A ticked checkbox submits the string "on"; an unticked one submits
+  // nothing at all. So the only acceptable value is that exact string.
+  //
+  // This must NOT be .optional().refine(...) - inside z.object() an absent
+  // key skips an optional field's refinement entirely, so a caller that
+  // simply omitted "consent" would pass validation. A required literal has
+  // no such hole: absent, undefined and wrong all fail.
+  consent: z.literal("on", {
+    message: "You need to agree before the clinic can be contacted",
+  }),
+});
+
+export type BookingInput = z.infer<typeof bookingSchema>;
