@@ -11,7 +11,7 @@ import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "careconnect_session";
 
-const NEEDS_LOGIN = ["/dashboard", "/admin"];
+const NEEDS_LOGIN = ["/dashboard", "/admin", "/book"];
 const NEEDS_ADMIN = ["/admin"];
 const GUEST_ONLY = ["/login", "/register"];
 
@@ -59,5 +59,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Without a matcher this would run on every image and font too, adding
   // latency to every single asset request.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\.).*)"],
+  //
+  // The dots are written [.] rather than \. on purpose. This is a JavaScript
+  // STRING, so a single backslash is eaten before the regex engine ever sees
+  // it: "\." becomes "." - "any character". That turned the last alternative
+  // into "any path of one or more characters", so the negative lookahead
+  // rejected every route except "/" and silently disabled this whole file.
+  // A character class needs no escaping, so it cannot be broken that way.
+  matcher: ["/((?!api|_next/static|_next/image|favicon[.]ico|.*[.]).*)"],
 };
