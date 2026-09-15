@@ -3,12 +3,6 @@ import type { ComponentProps } from "react";
 type Variant = "primary" | "outline" | "ghost";
 type Size = "sm" | "md" | "lg";
 
-type ButtonProps = ComponentProps<"button"> & {
-  variant?: Variant;
-  size?: Size;
-};
-
-// Shared by every button, whatever the variant.
 const base =
   "inline-flex items-center justify-center gap-2 rounded-md font-medium " +
   "transition-colors cursor-pointer " +
@@ -27,6 +21,17 @@ const sizes: Record<Size, string> = {
   lg: "h-11 px-6 text-[0.95rem]",
 };
 
+// Exported so a <Link> can look like a button without duplicating the styles.
+// A link that navigates should stay an <a>; only real actions use <button>.
+export function buttonClasses(variant: Variant = "primary", size: Size = "md") {
+  return `${base} ${variants[variant]} ${sizes[size]}`;
+}
+
+type ButtonProps = ComponentProps<"button"> & {
+  variant?: Variant;
+  size?: Size;
+};
+
 export default function Button({
   variant = "primary",
   size = "md",
@@ -34,9 +39,6 @@ export default function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button
-      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
-      {...props}
-    />
+    <button className={`${buttonClasses(variant, size)} ${className}`} {...props} />
   );
 }
