@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 // depend on the query string.
 export default async function ProfessionalsPage({ searchParams }: PageProps<"/professionals">) {
   const query = queryFromSearchParams(await searchParams);
-  const results = filterProfessionals(query);
+  const results = await filterProfessionals(query);
 
   const hasFilters =
     query.term !== "" ||

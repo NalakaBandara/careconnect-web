@@ -1,9 +1,13 @@
 import Link from "next/link";
 import SectionHeading from "@/components/SectionHeading";
 import ProfessionalCard from "@/components/ProfessionalCard";
-import { professionals } from "@/data/professionals";
+import { fetchProfessionals } from "@/lib/professionals";
 
-export default function FeaturedProfessionals() {
+export default async function FeaturedProfessionals() {
+  // Only the first four, so adding a fifth professional does not stretch the
+  // home page.
+  const professionals = (await fetchProfessionals()).slice(0, 4);
+
   return (
     <section className="border-b border-border py-20">
       <div className="container-page">

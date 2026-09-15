@@ -1,4 +1,4 @@
-import { professionals } from "@/data/professionals";
+import { fetchProfessionals } from "@/lib/professionals";
 import type { Professional, ProfessionalQuery } from "@/types";
 
 // "all" is the sentinel meaning "no filter applied" - it keeps every filter a
@@ -25,9 +25,10 @@ function matches(professional: Professional, query: ProfessionalQuery): boolean 
   return termMatch && locationMatch && specialityMatch && serviceMatch;
 }
 
-// Pure function, no delay, no network. When the Express API is ready this
-// becomes a fetch and the callers do not change.
-export function filterProfessionals(query: ProfessionalQuery): Professional[] {
+// Async because the list comes from the API. matches() stays a pure function,
+// so the filtering itself is still trivial to reason about and to test.
+export async function filterProfessionals(query: ProfessionalQuery): Promise<Professional[]> {
+  const professionals = await fetchProfessionals();
   return professionals.filter((professional) => matches(professional, query));
 }
 

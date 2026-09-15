@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import StatusBadge from "@/components/appointments/StatusBadge";
 import { buttonClasses } from "@/components/Button";
-import { getProfessionalById } from "@/data/professionals";
+import { fetchProfessional } from "@/lib/professionals";
 import { fetchAppointments, splitAppointments } from "@/lib/appointments";
 import { getSession } from "@/lib/session";
 
@@ -36,7 +36,7 @@ export default async function DashboardPage() {
 
   const { upcoming } = splitAppointments(await fetchAppointments());
   const next = upcoming[0]; // the list arrives sorted, soonest first
-  const nextProfessional = next ? getProfessionalById(next.professionalId) : undefined;
+  const nextProfessional = next ? await fetchProfessional(next.professionalId) : null;
 
   return (
     <div>

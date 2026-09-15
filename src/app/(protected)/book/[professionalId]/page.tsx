@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProfessionalById } from "@/data/professionals";
+import { fetchProfessional } from "@/lib/professionals";
 import AppointmentSummary from "@/components/booking/AppointmentSummary";
 import BookingDetailsForm from "@/components/booking/BookingDetailsForm";
 import BookingSteps from "@/components/booking/BookingSteps";
@@ -29,7 +29,7 @@ export default async function BookPage({
   const { professionalId } = await params;
   const { date, time, reschedule } = await searchParams;
 
-  const professional = getProfessionalById(professionalId);
+  const professional = await fetchProfessional(professionalId);
   if (!professional) notFound();
 
   // Reschedule mode. The reference is looked up server-side and scoped to this

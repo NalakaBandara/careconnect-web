@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { specialities } from "@/data/professionals";
+
 // One set of rules, used by the forms in the browser AND by the server.
 // Keeping them in a single file means the two can never drift apart.
 
@@ -60,3 +62,55 @@ export const contactSchema = z.object({
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
+
+// A textarea of "one per line" becomes a string array. Blank lines are dropped
+// so a stray newline at the end is not an empty service.
+const linesToArray = (value: unknown) =>
+  typeof value === "string"
+    ? value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+    : value;
+
+// A missing key and an empty field should produce the SAME message. Without
+// this, a form submit (which always sends every key) reports "Enter the clinic
+// name" while a direct API call reports zod's own "expected string, received
+// undefined" - two messages for one mistake, and the second leaks internals.
+const professionalFields = z.object({
+  name: z.string().trim().min(1, "Enter the professional's name"),
+  // Built from the specialities list, so the two can never drift apart.
+  speciality: z.enum(specialities, { message: "Choose a speciality" }),
+  qualifications: z.string().trim().min(1, "Enter their qualifications"),
+  clinic: z.string().trim().min(1, "Enter the clinic name"),
+  location: z.string().trim().min(1, "Enter the town or city"),
+  services: z.preprocess(
+    linesToArray,
+    z.array(z.string()).min(1, "List at least one service, one per line"),
+  ),
+  availabilitySummary: z.string().trim().min(1, "Summarise when they are available"),
+  generalAvailability: z.preprocess(
+    linesToArray,
+    z.array(z.string()).min(1, "List at least one availability line"),
+  ),
+  summary: z
+    .string()
+    .trim()
+    .min(40, "Write at least a couple of sentences so patients know what to expect")
+    .max(1200, "Please keep this under 1200 characters"),
+  photo: z
+    .string()
+    .trim()
+    .min(1, "Enter the photo path")
+    .regex(/^\/[A-Za-z0-9/_.-]+\.(jpg|jpeg|png|webp)$/, "Use a path like /professionals/pro-1.jpg"),
+  photoAlt: z.string().trim().min(1, "Describe the photo for screen readers"),
+});
+
+export const professionalSchema = z.preprocess((value) => {
+  const body = (value ?? {}) as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.keys(professionalFields.shape).map((key) => [key, body[key] ?? ""]),
+  );
+}, professionalFields);
+
+export type ProfessionalInput = z.infer<typeof professionalSchema>;

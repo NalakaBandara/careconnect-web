@@ -2,16 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import StatusBadge from "@/components/appointments/StatusBadge";
 import { buttonClasses } from "@/components/Button";
-import { getProfessionalById } from "@/data/professionals";
+import { fetchProfessional } from "@/lib/professionals";
 import { canCancel, type DecoratedAppointment } from "@/lib/appointments";
 import CancelAppointment from "@/components/appointments/CancelAppointment";
 
-export default function AppointmentCard({
+export default async function AppointmentCard({
   appointment,
 }: {
   appointment: DecoratedAppointment;
 }) {
-  const professional = getProfessionalById(appointment.professionalId);
+  const professional = await fetchProfessional(appointment.professionalId);
 
   return (
     <article className="overflow-hidden rounded-lg border border-border bg-background shadow-soft">

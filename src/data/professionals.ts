@@ -1,17 +1,28 @@
 import type { Professional, Speciality } from "@/types";
 
-export const specialities: Speciality[] = [
+// "as const satisfies" gives two things at once: the values stay literal types
+// (so zod can build an enum from them) and they are still checked against
+// Speciality, so a typo here is a type error rather than a new speciality.
+export const specialities = [
   "General Practice",
   "Dentistry",
   "Mental Health",
   "Physiotherapy",
   "Dermatology",
   "Women's Health",
-];
+] as const satisfies readonly Speciality[];
 
-export const locations = ["Manchester", "Leeds", "Birmingham", "Bristol", "Glasgow"];
+export const locations = [
+  "Manchester",
+  "Leeds",
+  "Birmingham",
+  "Bristol",
+  "Glasgow",
+] as const;
 
-export const professionals: Professional[] = [
+// The starting data. The live list lives in src/lib/professional-store.ts,
+// which seeds itself from this and can then be edited by an admin.
+export const seedProfessionals: Professional[] = [
   {
     id: "arun-mehta",
     name: "Dr Arun Mehta",
@@ -73,7 +84,3 @@ export const professionals: Professional[] = [
     photoAlt: "Kenji Tanaka, physiotherapist, wearing a dark polo shirt",
   },
 ];
-
-export function getProfessionalById(id: string): Professional | undefined {
-  return professionals.find((professional) => professional.id === id);
-}

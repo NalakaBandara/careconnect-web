@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import StatusBadge from "@/components/appointments/StatusBadge";
 import CancelAppointment from "@/components/appointments/CancelAppointment";
 import { buttonClasses } from "@/components/Button";
-import { getProfessionalById } from "@/data/professionals";
+import { fetchProfessional } from "@/lib/professionals";
 import { canCancel, fetchAppointment } from "@/lib/appointments";
 
 export const metadata: Metadata = {
@@ -25,7 +25,7 @@ export default async function AppointmentDetailPage({
   const appointment = await fetchAppointment(reference);
   if (!appointment) notFound();
 
-  const professional = getProfessionalById(appointment.professionalId);
+  const professional = await fetchProfessional(appointment.professionalId);
 
   const facts: [string, string][] = [
     ["Date", appointment.longDate],

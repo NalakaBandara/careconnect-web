@@ -2,7 +2,7 @@
 // Delete this file once the real API is ready. See docs/api-contract.md.
 
 import { bookingSchema } from "@/lib/schemas";
-import { getProfessionalById } from "@/data/professionals";
+import { findProfessional } from "@/lib/professional-store";
 import { resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
 import { createAppointment, isSlotTaken, listAppointments } from "@/lib/stub-appointments";
 import { callerId, unauthorised } from "@/lib/stub-api-auth";
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!getProfessionalById(professionalId)) {
+  if (!findProfessional(professionalId)) {
     return Response.json({ error: { message: "Unknown professional" } }, { status: 404 });
   }
 

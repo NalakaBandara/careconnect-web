@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { professionals, getProfessionalById } from "@/data/professionals";
+import { fetchProfessional } from "@/lib/professionals";
 import BookingGate from "@/components/professionals/BookingGate";
 import { getSession } from "@/lib/session";
 
-// Tells Next which ids exist, so these four pages are built ahead of time
-// instead of rendered on every request.
-export function generateStaticParams() {
-  return professionals.map((professional) => ({ professionalId: professional.id }));
-}
+// No generateStaticParams here any more. Prebuilding a fixed list of ids only
+// works while the data is a constant in the repo. An admin can now add and
+// remove professionals at runtime, so the set of valid ids is not known at
+// build time - and the API may not even be running then. These render on
+// demand instead.
 
 export async function generateMetadata({
   params,
 }: PageProps<"/professionals/[professionalId]">): Promise<Metadata> {
   const { professionalId } = await params;
-  const professional = getProfessionalById(professionalId);
+  const professional = await fetchProfessional(professionalId);
 
   if (!professional) {
     return { title: "Professional not found", robots: { index: false } };
@@ -32,7 +32,7 @@ export default async function ProfessionalPage({
   params,
 }: PageProps<"/professionals/[professionalId]">) {
   const { professionalId } = await params;
-  const professional = getProfessionalById(professionalId);
+  const professional = await fetchProfessional(professionalId);
 
   // notFound() throws, so nothing below it runs. It renders the nearest
   // not-found page rather than a broken page with empty fields.

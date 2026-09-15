@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProfessionalById } from "@/data/professionals";
+import { fetchProfessional } from "@/lib/professionals";
 import AppointmentSummary from "@/components/booking/AppointmentSummary";
 import BookingSteps from "@/components/booking/BookingSteps";
 import { buttonClasses } from "@/components/Button";
@@ -21,7 +21,7 @@ export default async function ConfirmedPage({
   const { professionalId } = await params;
   const { ref } = await searchParams;
 
-  const professional = getProfessionalById(professionalId);
+  const professional = await fetchProfessional(professionalId);
   if (!professional) notFound();
 
   const user = await getSession();
