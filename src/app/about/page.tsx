@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <main>
+    <main id="main">
       <PageHero
         title="About CareConnect"
         intro="CareConnect helps people discover suitable healthcare professionals and services in one place, without calling several practices to find out who offers what."

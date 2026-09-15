@@ -46,7 +46,7 @@ export default async function ConfirmedPage({
 
 
   return (
-    <main>
+    <main id="main">
       <div className="border-b border-border bg-surface py-10">
         <div className="container-page">
           <BookingSteps current={3} />

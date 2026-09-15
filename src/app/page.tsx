@@ -10,7 +10,7 @@ import Reveal from "@/components/Reveal";
 
 export default function Home() {
   return (
-    <main>
+    <main id="main">
       {/* The hero is above the fold, so it is not wrapped - animating what is
           already on screen when the page loads just delays it. */}
       <Hero />

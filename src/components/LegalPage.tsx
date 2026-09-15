@@ -15,7 +15,7 @@ export default function LegalPage({
   updated: string;
 }) {
   return (
-    <main>
+    <main id="main">
       <PageHero title={title} intro={intro} />
 
       <section className="py-14">

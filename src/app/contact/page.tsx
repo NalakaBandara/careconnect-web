@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <main>
+    <main id="main">
       <PageHero
         title="Contact us"
         intro="Send the team a message and we will reply within two working days."

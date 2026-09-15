@@ -23,7 +23,10 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
           </Link>
         </aside>
 
-        <div className="min-w-0">{children}</div>
+        {/* A landmark, so assistive technology can skip the sidebar. */}
+        <main id="main" className="min-w-0">
+          {children}
+        </main>
       </div>
     </div>
   );

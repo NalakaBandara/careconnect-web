@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ServicesPage() {
   return (
-    <main>
+    <main id="main">
       <PageHero
         title="Explore healthcare services"
         intro="Each service is delivered by registered practitioners at partner clinics. Browse what a service covers, then view the professionals who provide it."

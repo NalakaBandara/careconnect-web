@@ -47,7 +47,7 @@ export default async function BookPage({
 
   if (confirmedDay && chosenTime) {
     return (
-      <main>
+      <main id="main">
         <Hero step={2} professionalName={professional.name} moving={isMoving} />
 
         <div className="container-page grid gap-10 py-12 lg:grid-cols-[1.4fr_0.6fr] lg:gap-16">
@@ -108,7 +108,7 @@ export default async function BookPage({
     requested && requested.freeCount > 0 ? requested : firstBookableDay(days);
 
   return (
-    <main>
+    <main id="main">
       <Hero step={1} professionalName={professional.name} moving={isMoving} />
 
       <div className="container-page grid gap-10 py-12 lg:grid-cols-[1.4fr_0.6fr] lg:gap-16">

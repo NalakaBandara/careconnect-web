@@ -25,7 +25,7 @@ export default async function ProfessionalsPage({ searchParams }: PageProps<"/pr
     query.service !== "all";
 
   return (
-    <main>
+    <main id="main">
       <section className="border-b border-border bg-surface py-14">
         <div className="container-page">
           <h1 className="max-w-2xl text-4xl font-semibold leading-tight">
@@ -47,9 +47,13 @@ export default async function ProfessionalsPage({ searchParams }: PageProps<"/pr
           <ProfessionalFilters query={query} />
 
           <div className="mt-8 flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
+            {/* A heading, not a paragraph. Each card's name is an <h3>, so
+                without an <h2> here the page jumped h1 -> h3 - which reads as
+                a missing section to anyone navigating by headings.
+                font-sans because the global rule puts headings in the serif. */}
+            <h2 className="font-sans text-sm font-normal text-muted-foreground">
               {results.length} {results.length === 1 ? "professional" : "professionals"} listed
-            </p>
+            </h2>
             {hasFilters && (
               <Link
                 href="/professionals"

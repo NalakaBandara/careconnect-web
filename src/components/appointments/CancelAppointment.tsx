@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Button from "@/components/Button";
+import Modal from "@/components/Modal";
 import {
   cancelAppointmentAction,
   type MutationState,
@@ -32,43 +33,38 @@ export default function CancelAppointment({
         Cancel
       </Button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={`cancel-title-${reference}`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/45 p-5"
-        >
-          <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-raised">
-            <h2 id={`cancel-title-${reference}`} className="font-serif text-lg font-semibold">
-              Cancel this appointment?
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Your appointment with {professionalName} ({reference}) will be cancelled and the
-              clinic notified. You would need to book again to get the slot back.
-            </p>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        titleId={`cancel-title-${reference}`}
+      >
+        <h2 id={`cancel-title-${reference}`} className="font-serif text-lg font-semibold">
+          Cancel this appointment?
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Your appointment with {professionalName} ({reference}) will be cancelled and the
+          clinic notified. You would need to book again to get the slot back.
+        </p>
 
-            {state.message && (
-              <p role="alert" className="mt-4 text-sm text-destructive">
-                {state.message}
-              </p>
-            )}
+        {state.message && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {state.message}
+          </p>
+        )}
 
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-                Keep appointment
-              </Button>
-              {/* A real <form> with a Server Action, not an onClick fetch, so
-                  it still works if the JavaScript has not loaded. */}
-              <form action={formAction}>
-                <Button type="submit" disabled={isPending} className="w-full">
-                  {isPending ? "Cancelling…" : "Yes, cancel it"}
-                </Button>
-              </form>
-            </div>
-          </div>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+            Keep appointment
+          </Button>
+          {/* A real <form> with a Server Action, not an onClick fetch, so it
+              still works if the JavaScript has not loaded. */}
+          <form action={formAction}>
+            <Button type="submit" disabled={isPending} className="w-full">
+              {isPending ? "Cancelling…" : "Yes, cancel it"}
+            </Button>
+          </form>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Button from "@/components/Button";
+import Modal from "@/components/Modal";
 import {
   deleteProfessionalAction,
   type DeleteState,
@@ -29,41 +30,32 @@ export default function DeleteProfessional({
         Remove
       </Button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={`delete-title-${id}`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/45 p-5"
-        >
-          <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-raised">
-            <h2 id={`delete-title-${id}`} className="font-serif text-lg font-semibold">
-              Remove {name} from the directory?
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Their public profile will stop working immediately. Existing appointments keep
-              their record, but patients will no longer be able to find or book them.
-            </p>
+      <Modal open={open} onClose={() => setOpen(false)} titleId={`delete-title-${id}`}>
+        <h2 id={`delete-title-${id}`} className="font-serif text-lg font-semibold">
+          Remove {name} from the directory?
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Their public profile will stop working immediately. Existing appointments keep their
+          record, but patients will no longer be able to find or book them.
+        </p>
 
-            {state.message && (
-              <p role="alert" className="mt-4 text-sm text-destructive">
-                {state.message}
-              </p>
-            )}
+        {state.message && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {state.message}
+          </p>
+        )}
 
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
-                Keep them
-              </Button>
-              <form action={formAction}>
-                <Button type="submit" disabled={isPending} className="w-full">
-                  {isPending ? "Removing…" : "Yes, remove"}
-                </Button>
-              </form>
-            </div>
-          </div>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+            Keep them
+          </Button>
+          <form action={formAction}>
+            <Button type="submit" disabled={isPending} className="w-full">
+              {isPending ? "Removing…" : "Yes, remove"}
+            </Button>
+          </form>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

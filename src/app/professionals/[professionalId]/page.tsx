@@ -41,7 +41,7 @@ export default async function ProfessionalPage({
   const session = await getSession();
 
   return (
-    <main>
+    <main id="main">
       <div className="border-b border-border bg-surface py-12">
         <div className="container-page">
           <Link

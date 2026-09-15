@@ -18,7 +18,10 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
           <DashboardNav isAdmin={hasRole(user, "admin")} />
         </aside>
 
-        <div className="min-w-0">{children}</div>
+        {/* A landmark, so assistive technology can skip the sidebar. */}
+        <main id="main" className="min-w-0">
+          {children}
+        </main>
       </div>
     </div>
   );

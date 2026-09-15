@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function FaqsPage() {
   return (
-    <main>
+    <main id="main">
       <PageHero
         title="Frequently asked questions"
         intro="Practical answers about browsing, accounts and privacy on CareConnect."
