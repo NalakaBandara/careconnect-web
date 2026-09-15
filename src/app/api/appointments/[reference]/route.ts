@@ -9,6 +9,7 @@ import {
   setAppointmentStatus,
 } from "@/lib/stub-appointments";
 import { resolveFreeSlot } from "@/lib/slots";
+import { availableSlotDays } from "@/lib/slot-availability";
 
 // Every lookup is scoped to the caller. A reference is short enough to guess,
 // so "not yours" has to be indistinguishable from "does not exist" - otherwise
@@ -76,7 +77,7 @@ export async function PATCH(
     }
 
     // The slot has to be real and free. The page checked, but that was then.
-    if (!resolveFreeSlot(existing.professionalId, date!, time!)) {
+    if (!resolveFreeSlot(availableSlotDays(existing.professionalId), date!, time!)) {
       return Response.json(
         { error: { message: "That appointment time is no longer available" } },
         { status: 409 },

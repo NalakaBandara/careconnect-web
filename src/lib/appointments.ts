@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getSessionToken } from "@/lib/session";
-import { findDay, getSlotDays } from "@/lib/slots";
+import { longDate, todayIso } from "@/lib/date-format";
 import type { Appointment } from "@/types";
 
 // The only place pages get appointments from. When Express arrives, the fetch
@@ -12,42 +12,19 @@ export type DecoratedAppointment = Appointment & {
   isPast: boolean;
 };
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 // The stored date is "YYYY-MM-DD", which compares correctly as a plain string -
 // no Date parsing, so no timezone surprises.
+//
+// The date used to be read off the generated slot grid, which only covered the
+// next fortnight - so anything older fell back to a second, differently
+// worded formatter. One shared formatter removes both the coupling and the
+// inconsistency.
 function decorate(appointment: Appointment): DecoratedAppointment {
-  const day = findDay(getSlotDays(appointment.professionalId, 14), appointment.date);
-
   return {
     ...appointment,
-    longDate: day?.longDate ?? formatIsoDate(appointment.date),
+    longDate: longDate(appointment.date),
     isPast: appointment.date < todayIso(),
   };
-}
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-// Used for dates outside the generated slot window, which is most past ones.
-function formatIsoDate(iso: string): string {
-  const [year, month, day] = iso.split("-").map(Number);
-  if (!year || !month || !day) return iso;
-  return `${day} ${MONTHS[month - 1]} ${year}`;
 }
 
 export async function fetchAppointments(): Promise<DecoratedAppointment[]> {

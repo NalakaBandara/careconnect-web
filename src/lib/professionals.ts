@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Professional } from "@/types";
+import type { Professional, SlotDay } from "@/types";
 
 // The only way a PAGE reads professionals. It goes through the API rather than
 // importing the store, and that is not ceremony - it is the bug fix.
@@ -35,4 +35,19 @@ export async function fetchProfessional(id: string): Promise<Professional | null
 
   const body = await response.json().catch(() => null);
   return body?.professional ?? null;
+}
+
+// Availability, with other people's bookings already taken into account. Same
+// reason as above: the store lives in the API's module graph, so a page that
+// generated slots locally would not know what anyone else had booked.
+export async function fetchSlotDays(professionalId: string): Promise<SlotDay[]> {
+  const response = await fetch(
+    `${process.env.API_BASE_URL}/professionals/${encodeURIComponent(professionalId)}/slots`,
+    { cache: "no-store" },
+  ).catch(() => null);
+
+  if (!response?.ok) return [];
+
+  const body = await response.json().catch(() => null);
+  return body?.days ?? [];
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession, getSessionToken } from "@/lib/session";
 import { resolveFreeSlot } from "@/lib/slots";
+import { fetchSlotDays } from "@/lib/professionals";
 
 export type MutationState = { message?: string };
 
@@ -59,7 +60,8 @@ export async function rescheduleAppointmentAction(
   if (!user) redirect("/login");
 
   // Re-check the slot. The page showed it as free, but that was some time ago.
-  if (!resolveFreeSlot(input.professionalId, input.date, input.time)) {
+  const days = await fetchSlotDays(input.professionalId);
+  if (!resolveFreeSlot(days, input.date, input.time)) {
     return { message: "That time is no longer available. Please choose another." };
   }
 

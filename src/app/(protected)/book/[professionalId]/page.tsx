@@ -9,13 +9,8 @@ import SlotPicker from "@/components/booking/SlotPicker";
 import RescheduleConfirm from "@/components/booking/RescheduleConfirm";
 import { fetchAppointment, canCancel } from "@/lib/appointments";
 import { bookingAction } from "./actions";
-import {
-  firstBookableDay,
-  findDay,
-  getSlotDays,
-  resolveFreeSlot,
-  SLOT_DURATION_MINUTES,
-} from "@/lib/slots";
+import { firstBookableDay, findDay, resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
+import { fetchSlotDays } from "@/lib/professionals";
 
 export const metadata: Metadata = {
   title: "Book an appointment",
@@ -39,14 +34,16 @@ export default async function BookPage({
   const moving = ref ? await fetchAppointment(ref) : null;
   const isMoving = Boolean(moving && canCancel(moving) && moving.professionalId === professionalId);
 
-  const days = getSlotDays(professionalId);
+  // Fetched, not generated: these days already have other patients' bookings
+  // marked as taken, so two people cannot be shown the same free slot.
+  const days = await fetchSlotDays(professionalId);
 
   // Step 2 only if BOTH a date and a time are in the URL, and the pair is a
   // real free slot. Anything else falls back to step 1 rather than trusting it.
   const chosenDate = typeof date === "string" ? date : undefined;
   const chosenTime = typeof time === "string" ? time : undefined;
   const confirmedDay =
-    chosenDate && chosenTime ? resolveFreeSlot(professionalId, chosenDate, chosenTime) : null;
+    chosenDate && chosenTime ? resolveFreeSlot(days, chosenDate, chosenTime) : null;
 
   if (confirmedDay && chosenTime) {
     return (

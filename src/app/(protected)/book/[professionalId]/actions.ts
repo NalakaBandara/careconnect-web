@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { bookingSchema } from "@/lib/schemas";
 import { getSession, getSessionToken } from "@/lib/session";
 import { resolveFreeSlot } from "@/lib/slots";
+import { fetchSlotDays } from "@/lib/professionals";
 
 export type BookingState = {
   message?: string;
@@ -55,7 +56,8 @@ export async function bookingAction(
   }
 
   // Re-check the slot. The page rendered it as free, but that was some time ago.
-  if (!resolveFreeSlot(slot.professionalId, slot.date, slot.time)) {
+  const days = await fetchSlotDays(slot.professionalId);
+  if (!resolveFreeSlot(days, slot.date, slot.time)) {
     return {
       message: "That appointment time is no longer available. Please choose another.",
       values,

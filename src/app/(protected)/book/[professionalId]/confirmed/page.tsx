@@ -6,7 +6,7 @@ import AppointmentSummary from "@/components/booking/AppointmentSummary";
 import BookingSteps from "@/components/booking/BookingSteps";
 import { buttonClasses } from "@/components/Button";
 import { getSession, getSessionToken } from "@/lib/session";
-import { getSlotDays, findDay } from "@/lib/slots";
+import { longDate } from "@/lib/date-format";
 import type { Appointment } from "@/types";
 
 export const metadata: Metadata = {
@@ -43,7 +43,7 @@ export default async function ConfirmedPage({
 
   if (!appointment) notFound();
 
-  const day = findDay(getSlotDays(professionalId), appointment.date);
+
 
   return (
     <main>
@@ -93,7 +93,7 @@ export default async function ConfirmedPage({
           <div className="mt-5 text-left">
             <AppointmentSummary
               professional={professional}
-              longDate={day?.longDate ?? appointment.date}
+              longDate={longDate(appointment.date)}
               time={appointment.time}
               durationMinutes={appointment.durationMinutes}
             />

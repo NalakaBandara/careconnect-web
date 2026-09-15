@@ -4,6 +4,7 @@
 import { bookingSchema } from "@/lib/schemas";
 import { findProfessional } from "@/lib/professional-store";
 import { resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
+import { availableSlotDays } from "@/lib/slot-availability";
 import { createAppointment, isSlotTaken, listAppointments } from "@/lib/stub-appointments";
 import { callerId, unauthorised } from "@/lib/stub-api-auth";
 
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
   // Re-check the slot server-side. The page checked it too, but minutes may
   // have passed since it rendered.
-  if (!resolveFreeSlot(professionalId, date, time)) {
+  if (!resolveFreeSlot(availableSlotDays(professionalId), date, time)) {
     return Response.json(
       { error: { message: "That appointment time is no longer available" } },
       { status: 409 },
