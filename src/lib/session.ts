@@ -60,3 +60,11 @@ export async function getSession(): Promise<SessionUser | null> {
 export function hasRole(user: SessionUser | null, role: string) {
   return user?.roles.includes(role) ?? false;
 }
+
+// The raw token, for forwarding to the API as a Bearer header. The browser's
+// cookie authenticates it to *Next*, not to a separate API server - so Next
+// has to pass the credential along itself.
+export async function getSessionToken(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get(COOKIE_NAME)?.value ?? null;
+}

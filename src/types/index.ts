@@ -40,3 +40,40 @@ export interface ProfessionalQuery {
   speciality: string;
   service: string;
 }
+
+// --- Appointment booking ---
+
+export interface Slot {
+  time: string; // "09:30"
+  taken: boolean;
+}
+
+export interface SlotGroup {
+  label: string; // "Morning" | "Evening"
+  slots: Slot[];
+}
+
+export interface SlotDay {
+  date: string; // "2026-09-17" - sortable and timezone-proof
+  weekday: string; // "Wed"
+  dayMonth: string; // "17 Sep"
+  longDate: string; // "Wednesday 17 September 2026"
+  freeCount: number;
+  groups: SlotGroup[];
+}
+
+export type AppointmentStatus = "confirmed" | "awaiting" | "cancelled" | "completed";
+
+export interface Appointment {
+  reference: string; // "CC-4821-MEH"
+  userId: string;
+  professionalId: string;
+  date: string; // "2026-09-17"
+  time: string; // "09:30"
+  durationMinutes: number;
+  reason: string;
+  notes: string;
+  contactNumber: string;
+  status: AppointmentStatus;
+  createdAt: string;
+}
