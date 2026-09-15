@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --radius: 0.5rem;
   --primary: oklch(0.5916 0.1068 180.77);
   --primary-hover: oklch(0.52 0.095 180.77);
   --primary-soft: oklch(0.965 0.021 180.77);
@@ -20,6 +21,11 @@
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --shadow-soft: 0 1px 2px oklch(0.2 0.02 200 / 6%), 0 8px 24px -16px oklch(0.2 0.02 200 / 22%);
+  --shadow-raised: 0 1px 2px oklch(0.2 0.02 200 / 8%), 0 16px 40px -24px oklch(0.2 0.02 200 / 30%);
   --color-primary:  var(--primary);
   --color-primary-hover:  var(--primary-hover);
   --color-primary-soft:  var(--primary-soft);
@@ -47,4 +53,11 @@ body {
 h1, h2, h3 {
   font-family: var(--font-serif);
   letter-spacing: -0.015em;
+}
+/* Every page section sits inside this: centred, max 76rem, 20px side padding. */
+@utility container-page {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 76rem;
+  padding-inline: 1.25rem;
 }
