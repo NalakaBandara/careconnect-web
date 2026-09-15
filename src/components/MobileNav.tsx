@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { mainNav } from "@/data/nav";
 
 // Only the toggle needs to be a Client Component. Everything else in the
 // header stays server-rendered.
@@ -25,12 +26,15 @@ export default function MobileNav({ isLoggedIn }: { isLoggedIn: boolean }) {
           id="mobile-menu"
           className="absolute right-0 z-10 mt-2 flex w-56 flex-col gap-1 rounded-lg border border-border bg-background p-2 shadow-lg"
         >
-          <Link href="/" className="rounded-md px-3 py-2 hover:bg-surface">
-            Home
-          </Link>
-          <Link href="/about" className="rounded-md px-3 py-2 hover:bg-surface">
-            About
-          </Link>
+          {mainNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-md px-3 py-2 hover:bg-surface"
+            >
+              {item.label}
+            </Link>
+          ))}
           {isLoggedIn ? (
             <Link href="/dashboard" className="rounded-md px-3 py-2 hover:bg-surface">
               Dashboard

@@ -47,3 +47,16 @@ export const bookingSchema = z.object({
 });
 
 export type BookingInput = z.infer<typeof bookingSchema>;
+
+export const contactSchema = z.object({
+  name: z.string().trim().min(1, "Enter your name"),
+  email: z.email("Enter a valid email address").trim().toLowerCase(),
+  subject: z.string().trim().min(1, "Enter a subject"),
+  message: z
+    .string()
+    .trim()
+    .min(10, "Please write at least a sentence so we can help")
+    .max(2000, "Please keep this under 2000 characters"),
+});
+
+export type ContactInput = z.infer<typeof contactSchema>;

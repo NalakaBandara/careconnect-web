@@ -56,7 +56,8 @@ export default async function BookPage({
                   date: confirmedDay.date,
                   time: chosenTime,
                 })}
-                backHref={`/book/${professionalId}?date=${confirmedDay.date}`}
+                professionalId={professionalId}
+                date={confirmedDay.date}
               />
             </div>
           </div>

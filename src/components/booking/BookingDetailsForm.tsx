@@ -10,10 +10,12 @@ type Action = (prev: BookingState, formData: FormData) => Promise<BookingState>;
 
 export default function BookingDetailsForm({
   action,
-  backHref,
+  professionalId,
+  date,
 }: {
   action: Action;
-  backHref: string;
+  professionalId: string;
+  date: string;
 }) {
   const [state, formAction, isPending] = useActionState(action, {});
 
@@ -103,7 +105,13 @@ export default function BookingDetailsForm({
         <Button type="submit" disabled={isPending}>
           {isPending ? "Confirming…" : "Confirm booking"}
         </Button>
-        <Link href={backHref} className={buttonClasses("outline", "md")}>
+        {/* Built here rather than passed in as a finished string. typedRoutes
+            can only check a template literal where it is written, so keeping
+            it next to the <Link> keeps the route checked instead of casting. */}
+        <Link
+          href={`/book/${professionalId}?date=${date}`}
+          className={buttonClasses("outline", "md")}
+        >
           Back
         </Link>
       </div>

@@ -197,6 +197,41 @@ Both must be scoped to the caller's own appointments.
 
 ---
 
+## POST /api/contact
+
+Public — no token required.
+
+**Request**
+
+```json
+{
+  "name": "Amara Silva",
+  "email": "amara@example.com",
+  "subject": "Listing a clinic",
+  "message": "We run a small physiotherapy practice and would like to be listed."
+}
+```
+
+| Field | Rules |
+|---|---|
+| `name` | required |
+| `email` | required, valid email, lowercased |
+| `subject` | required |
+| `message` | required, 10 to 2000 characters |
+
+**201 Created** — `{ "received": true }`
+
+**400** — validation, with per-field messages in `error.fields`.
+
+Two notes for the Express side:
+
+- **Do not log the message body.** It is somebody's personal correspondence, and enquiries to
+  a healthcare service may contain health information. The stub logs only the sender and the
+  subject.
+- This endpoint is unauthenticated and therefore worth rate-limiting.
+
+---
+
 ## Roles
 
 `roles` is an **array**, because the `user_roles` table allows a user to hold more than one.

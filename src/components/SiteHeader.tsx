@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { buttonClasses } from "@/components/Button";
 import LogoutButton from "@/components/LogoutButton";
 import MobileNav from "@/components/MobileNav";
+import { mainNav } from "@/data/nav";
 
 // A Server Component, so it can read the session cookie directly.
 // Note the trade-off: reading cookies means every page using this header is
@@ -18,12 +19,15 @@ export default async function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm lg:flex">
-          <Link href="/" className="text-muted-foreground hover:text-foreground">
-            Home
-          </Link>
-          <Link href="/about" className="text-muted-foreground hover:text-foreground">
-            About
-          </Link>
+          {mainNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {item.label}
+            </Link>
+          ))}
           {user && (
             <Link
               href="/dashboard"
