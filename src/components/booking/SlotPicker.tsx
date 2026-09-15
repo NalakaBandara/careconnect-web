@@ -8,11 +8,17 @@ export default function SlotPicker({
   professionalId,
   days,
   selectedDay,
+  reschedule,
 }: {
   professionalId: string;
   days: SlotDay[];
   selectedDay: SlotDay | undefined;
+  reschedule?: string;
 }) {
+  // Carried through every link so a reschedule keeps moving the existing
+  // appointment rather than quietly turning into a new booking.
+  const keep = reschedule ? `&reschedule=${reschedule}` : "";
+
   return (
     <div>
       <h2 className="text-lg font-semibold">Choose a day</h2>
@@ -49,7 +55,7 @@ export default function SlotPicker({
           return (
             <li key={day.date}>
               <Link
-                href={`/book/${professionalId}?date=${day.date}`}
+                href={`/book/${professionalId}?date=${day.date}${keep}`}
                 aria-current={isSelected ? "true" : undefined}
                 className={
                   `${shared} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ` +
@@ -89,7 +95,7 @@ export default function SlotPicker({
                       </button>
                     ) : (
                       <Link
-                        href={`/book/${professionalId}?date=${selectedDay.date}&time=${slot.time}`}
+                        href={`/book/${professionalId}?date=${selectedDay.date}&time=${slot.time}${keep}`}
                         className="flex h-11 w-full items-center justify-center rounded-md border border-border-strong bg-background text-sm font-medium hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         {slot.time}

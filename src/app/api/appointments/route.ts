@@ -1,40 +1,15 @@
 // STUB. Stands in for POST/GET /api/appointments on the Express API.
 // Delete this file once the real API is ready. See docs/api-contract.md.
 
-import { jwtVerify } from "jose";
 import { bookingSchema } from "@/lib/schemas";
 import { getProfessionalById } from "@/data/professionals";
 import { resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
 import { createAppointment, isSlotTaken, listAppointments } from "@/lib/stub-appointments";
-
-const UNAUTHORISED = Response.json(
-  { error: { message: "You need to be signed in to do that" } },
-  { status: 401 },
-);
-
-// Reads the Bearer token the way Express will have to. The cookie is Next's
-// business; an API server only ever sees the Authorization header.
-async function callerId(request: Request): Promise<string | null> {
-  const header = request.headers.get("authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) return null;
-
-  try {
-    const { payload } = await jwtVerify(
-      header.slice("Bearer ".length),
-      new TextEncoder().encode(secret),
-    );
-    return payload.sub ? String(payload.sub) : null;
-  } catch {
-    return null; // expired or tampered with
-  }
-}
+import { callerId, unauthorised } from "@/lib/stub-api-auth";
 
 export async function POST(request: Request) {
   const userId = await callerId(request);
-  if (!userId) return UNAUTHORISED;
+  if (!userId) return unauthorised();
 
   let body: unknown;
   try {
@@ -98,7 +73,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const userId = await callerId(request);
-  if (!userId) return UNAUTHORISED;
+  if (!userId) return unauthorised();
 
   return Response.json({ appointments: listAppointments(userId) });
 }

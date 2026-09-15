@@ -189,11 +189,52 @@ Returns only the caller's own appointments, soonest first.
 
 **200** with `{ "appointments": [] }` when there are none — not a 404.
 
-### Still to agree
+### GET /api/appointments/:reference
 
-`PATCH /api/appointments/:reference` (reschedule) and
-`DELETE /api/appointments/:reference` (cancel) are not built yet on either side.
-Both must be scoped to the caller's own appointments.
+Returns one appointment, **scoped to the caller**.
+
+**200 OK** — `{ "appointment": { … } }`
+**404** — no such appointment *for this user*.
+
+A reference is short enough to guess, so "not yours" and "does not exist" must return the
+**same** 404. Distinguishing them would let someone confirm which references are real.
+
+### PATCH /api/appointments/:reference
+
+Two changes are accepted, and nothing else. An open-ended PATCH would let a client mark its
+own appointment `completed`, or edit fields the clinic owns.
+
+**Cancel:**
+
+```json
+{ "status": "cancelled" }
+```
+
+**Move (reschedule):**
+
+```json
+{ "date": "2026-09-18", "time": "10:30" }
+```
+
+The **reference does not change** when an appointment moves. The patient and the clinic have
+both written it down already.
+
+**200 OK** — `{ "appointment": { … } }` with the updated row.
+**400** — neither a cancel nor a move:
+`Send either { "status": "cancelled" } or { "date", "time" }`.
+**404** — not this user's appointment.
+**409** — the change is not allowed:
+
+| Situation | Message |
+|---|---|
+| Already cancelled | `That appointment is already cancelled` |
+| Completed, being cancelled | `A completed appointment cannot be cancelled` |
+| Completed or cancelled, being moved | `Only an active appointment can be moved` |
+| New slot not real or not free | `That appointment time is no longer available` |
+| New slot just taken by someone else | `Someone has just booked that time. Please choose another.` |
+
+One easy bug to write here: an appointment **occupies its own slot**, so a naive "is this slot
+free" check rejects moving an appointment to the time it already has. Allow the no-op.
 
 ---
 

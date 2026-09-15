@@ -13,6 +13,18 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // A leading underscore is how this codebase marks a parameter it has to
+      // declare but does not use - Server Actions must accept prevState to
+      // reach formData, for example. Without this, ESLint flags the very
+      // convention that exists to say "unused on purpose".
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
