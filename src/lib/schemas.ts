@@ -6,7 +6,14 @@ import { z } from "zod";
 export const registerSchema = z.object({
   firstName: z.string().trim().min(1, "Enter your first name"),
   lastName: z.string().trim().min(1, "Enter your last name"),
-  email: z.email("Enter a valid email address").trim().toLowerCase(),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    // Order matters. .email().trim() validates BEFORE trimming, so a pasted
+    // address with a trailing space was rejected as "not a valid email" with
+    // nothing visibly wrong with it. Clean the value first, then check it.
+    .pipe(z.email("Enter a valid email address")),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -15,7 +22,14 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.email("Enter a valid email address").trim().toLowerCase(),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    // Order matters. .email().trim() validates BEFORE trimming, so a pasted
+    // address with a trailing space was rejected as "not a valid email" with
+    // nothing visibly wrong with it. Clean the value first, then check it.
+    .pipe(z.email("Enter a valid email address")),
   // No length rules here. Telling someone their password is "too short" at
   // login would leak information about the stored password.
   password: z.string().min(1, "Enter your password"),
@@ -50,7 +64,14 @@ export type BookingInput = z.infer<typeof bookingSchema>;
 
 export const contactSchema = z.object({
   name: z.string().trim().min(1, "Enter your name"),
-  email: z.email("Enter a valid email address").trim().toLowerCase(),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    // Order matters. .email().trim() validates BEFORE trimming, so a pasted
+    // address with a trailing space was rejected as "not a valid email" with
+    // nothing visibly wrong with it. Clean the value first, then check it.
+    .pipe(z.email("Enter a valid email address")),
   subject: z.string().trim().min(1, "Enter a subject"),
   message: z
     .string()
