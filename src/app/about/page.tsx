@@ -18,7 +18,10 @@ export default function AboutPage() {
         intro="CareConnect helps people discover suitable healthcare professionals and services in one place, without calling several practices to find out who offers what."
       />
 
-      <section className="py-14">
+      {/* A div, not a section: the About body: the page heading lives in PageHero above,
+          and a section with no heading of its own is one an assistive
+          technology cannot announce. */}
+      <div className="py-14">
         <div className="container-page grid gap-12 lg:grid-cols-[1.4fr_0.6fr] lg:gap-20">
           <div className="max-w-2xl space-y-6">
             {aboutParagraphs.map((paragraph) => (
@@ -43,7 +46,7 @@ export default function AboutPage() {
             </div>
           </aside>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

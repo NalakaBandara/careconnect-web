@@ -21,7 +21,10 @@ export default async function ServicesPage() {
         intro="Each service is delivered by registered practitioners at partner clinics. Browse what a service covers, then view the professionals who provide it."
       />
 
-      <section className="py-14">
+      {/* A div, not a section: the service grid: the page heading lives in PageHero above,
+          and a section with no heading of its own is one an assistive
+          technology cannot announce. */}
+      <div className="py-14">
         <div className="container-page grid gap-6 md:grid-cols-2">
           {services.map((service: Service, index: number) => (
             <Reveal
@@ -51,7 +54,7 @@ export default async function ServicesPage() {
             </Reveal>
           ))}
         </div>
-      </section>
+      </div>
     </main>
   );
 }

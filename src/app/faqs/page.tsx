@@ -17,7 +17,10 @@ export default function FaqsPage() {
         intro="Practical answers about browsing, accounts and privacy on CareConnect."
       />
 
-      <section className="py-14">
+      {/* A div, not a section: the FAQ list: the page heading lives in PageHero above,
+          and a section with no heading of its own is one an assistive
+          technology cannot announce. */}
+      <div className="py-14">
         <div className="container-page max-w-3xl">
           {/* Native <details>/<summary>: the browser handles open and closed,
               keyboard access and screen-reader announcement. No JavaScript. */}
@@ -36,7 +39,7 @@ export default function FaqsPage() {
             and we will reply within two working days.
           </p>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
