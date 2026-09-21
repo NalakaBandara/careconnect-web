@@ -37,7 +37,7 @@ export async function contactAction(
 
   let response: Response;
   try {
-    response = await fetch(`${process.env.API_BASE_URL}/contact`, {
+    response = await fetch(`${process.env.STUB_BASE_URL}/contact`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(parsed.data),

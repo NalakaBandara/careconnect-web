@@ -30,7 +30,7 @@ function decorate(appointment: Appointment): DecoratedAppointment {
 export async function fetchAppointments(): Promise<DecoratedAppointment[]> {
   const token = await getSessionToken();
 
-  const response = await fetch(`${process.env.API_BASE_URL}/appointments`, {
+  const response = await fetch(`${process.env.STUB_BASE_URL}/appointments`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store", // somebody's own bookings must never be served from a cache
   }).catch(() => null);
@@ -49,7 +49,7 @@ export async function fetchAppointment(
   const token = await getSessionToken();
 
   const response = await fetch(
-    `${process.env.API_BASE_URL}/appointments/${encodeURIComponent(reference)}`,
+    `${process.env.STUB_BASE_URL}/appointments/${encodeURIComponent(reference)}`,
     {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",

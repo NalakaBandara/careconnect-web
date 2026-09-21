@@ -68,7 +68,7 @@ export async function bookingAction(
 
   let response: Response;
   try {
-    response = await fetch(`${process.env.API_BASE_URL}/appointments`, {
+    response = await fetch(`${process.env.STUB_BASE_URL}/appointments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

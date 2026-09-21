@@ -15,7 +15,7 @@ import type { Professional, SlotDay } from "@/types";
 // that reached into the store would have to be rewritten anyway.
 
 export async function fetchProfessionals(): Promise<Professional[]> {
-  const response = await fetch(`${process.env.API_BASE_URL}/professionals`, {
+  const response = await fetch(`${process.env.STUB_BASE_URL}/professionals`, {
     cache: "no-store", // an admin edit must show on the next request
   }).catch(() => null);
 
@@ -27,7 +27,7 @@ export async function fetchProfessionals(): Promise<Professional[]> {
 
 export async function fetchProfessional(id: string): Promise<Professional | null> {
   const response = await fetch(
-    `${process.env.API_BASE_URL}/professionals/${encodeURIComponent(id)}`,
+    `${process.env.STUB_BASE_URL}/professionals/${encodeURIComponent(id)}`,
     { cache: "no-store" },
   ).catch(() => null);
 
@@ -42,7 +42,7 @@ export async function fetchProfessional(id: string): Promise<Professional | null
 // generated slots locally would not know what anyone else had booked.
 export async function fetchSlotDays(professionalId: string): Promise<SlotDay[]> {
   const response = await fetch(
-    `${process.env.API_BASE_URL}/professionals/${encodeURIComponent(professionalId)}/slots`,
+    `${process.env.STUB_BASE_URL}/professionals/${encodeURIComponent(professionalId)}/slots`,
     { cache: "no-store" },
   ).catch(() => null);
 

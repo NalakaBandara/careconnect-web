@@ -50,7 +50,7 @@ function revalidateDirectory(id?: string) {
 async function send(path: string, method: "POST" | "PATCH", body: unknown) {
   const token = await getSessionToken();
 
-  return fetch(`${process.env.API_BASE_URL}${path}`, {
+  return fetch(`${process.env.STUB_BASE_URL}${path}`, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -150,7 +150,7 @@ export async function deleteProfessionalAction(
   let response: Response;
   try {
     response = await fetch(
-      `${process.env.API_BASE_URL}/professionals/${encodeURIComponent(id)}`,
+      `${process.env.STUB_BASE_URL}/professionals/${encodeURIComponent(id)}`,
       {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },

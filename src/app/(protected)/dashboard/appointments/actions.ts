@@ -11,7 +11,7 @@ export type MutationState = { message?: string };
 async function patchAppointment(reference: string, body: Record<string, string>) {
   const token = await getSessionToken();
 
-  return fetch(`${process.env.API_BASE_URL}/appointments/${encodeURIComponent(reference)}`, {
+  return fetch(`${process.env.STUB_BASE_URL}/appointments/${encodeURIComponent(reference)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

@@ -31,7 +31,7 @@ export default async function ConfirmedPage({
   // The reference comes from the URL, so the appointment is looked up
   // server-side and scoped to this user. Somebody else's reference finds
   // nothing, rather than showing their appointment.
-  const response = await fetch(`${process.env.API_BASE_URL}/appointments`, {
+  const response = await fetch(`${process.env.STUB_BASE_URL}/appointments`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   }).catch(() => null);
