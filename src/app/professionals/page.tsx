@@ -3,7 +3,13 @@ import Link from "next/link";
 import ProfessionalCard from "@/components/ProfessionalCard";
 import ProfessionalFilters from "@/components/professionals/ProfessionalFilters";
 import ProfessionalSearchBar from "@/components/professionals/ProfessionalSearchBar";
-import { filterProfessionals, queryFromSearchParams } from "@/lib/professional-search";
+import {
+  fetchClinics,
+  fetchSpecialities,
+  filterProfessionals,
+  queryFromSearchParams,
+} from "@/lib/directory";
+import type { Professional } from "@/types";
 
 export const metadata: Metadata = {
   title: "Find a healthcare professional",
@@ -16,13 +22,20 @@ export const metadata: Metadata = {
 // depend on the query string.
 export default async function ProfessionalsPage({ searchParams }: PageProps<"/professionals">) {
   const query = queryFromSearchParams(await searchParams);
-  const results = await filterProfessionals(query);
+  // Three independent reads, so they run together rather than in sequence.
+  const [results, specialities, clinics] = await Promise.all([
+    filterProfessionals(query),
+    fetchSpecialities(),
+    fetchClinics(),
+  ]);
+
+  // Cities, de-duplicated and sorted, because several clinics share one.
+  const locations = [
+    ...new Set(clinics.map((clinic) => clinic.city).filter((city): city is string => Boolean(city))),
+  ].sort();
 
   const hasFilters =
-    query.term !== "" ||
-    query.location !== "all" ||
-    query.speciality !== "all" ||
-    query.service !== "all";
+    query.term !== "" || query.location !== "all" || query.speciality !== "all";
 
   return (
     <main id="main">
@@ -32,8 +45,8 @@ export default async function ProfessionalsPage({ searchParams }: PageProps<"/pr
             Find a healthcare professional
           </h1>
           <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">
-            Search by name, speciality or service. Profiles show qualifications, clinic details
-            and general availability, so you only need an account when you request an
+            Search by name, speciality or clinic. Profiles show specialities, experience and
+            where each professional practises, so you only need an account when you request an
             appointment.
           </p>
           <div className="mt-8">
@@ -44,7 +57,11 @@ export default async function ProfessionalsPage({ searchParams }: PageProps<"/pr
 
       <section className="py-14">
         <div className="container-page">
-          <ProfessionalFilters query={query} />
+          <ProfessionalFilters
+            query={query}
+            specialities={specialities.map((speciality) => speciality.name)}
+            locations={locations}
+          />
 
           <div className="mt-8 flex items-center justify-between gap-4">
             {/* A heading, not a paragraph. Each card's name is an <h3>, so
@@ -66,7 +83,7 @@ export default async function ProfessionalsPage({ searchParams }: PageProps<"/pr
 
           {results.length > 0 ? (
             <div className="mt-6 grid gap-6 md:grid-cols-2">
-              {results.map((professional) => (
+              {results.map((professional: Professional) => (
                 <ProfessionalCard key={professional.id} professional={professional} />
               ))}
             </div>

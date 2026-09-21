@@ -11,6 +11,7 @@ import { fetchAppointment, canCancel } from "@/lib/appointments";
 import { bookingAction } from "./actions";
 import { firstBookableDay, findDay, resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
 import { fetchSlotDays } from "@/lib/professionals";
+import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export const metadata: Metadata = {
   title: "Book an appointment",
@@ -121,9 +122,9 @@ export default async function BookPage({
 
         <div className="h-fit rounded-lg border border-border bg-background p-6 shadow-soft">
           <h2 className="text-lg font-semibold">{professional.name}</h2>
-          <p className="mt-1 text-sm text-primary">{professional.speciality}</p>
+          <p className="mt-1 text-sm text-primary">{primarySpeciality(professional)}</p>
           <p className="mt-3 text-sm text-muted-foreground">
-            {professional.clinic}, {professional.location}
+            {clinicLine(professional)}
           </p>
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
             Appointments are {SLOT_DURATION_MINUTES} minutes. The clinic confirms the exact time

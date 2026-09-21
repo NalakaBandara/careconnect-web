@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
-import { services } from "@/data/services";
+import { fetchServices } from "@/lib/directory";
+import type { Service } from "@/types";
 import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
     "Browse the healthcare services available through CareConnect, what each one typically includes, and the professionals who provide them.",
 };
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const services = await fetchServices();
+
   return (
     <main id="main">
       <PageHero
@@ -20,9 +23,9 @@ export default function ServicesPage() {
 
       <section className="py-14">
         <div className="container-page grid gap-6 md:grid-cols-2">
-          {services.map((service, index) => (
+          {services.map((service: Service, index: number) => (
             <Reveal
-              key={service.slug}
+              key={service.id}
               // A small stagger reads as one movement rather than six.
               // Capped so the last card is not left waiting.
               delay={Math.min(index, 3) * 70}
@@ -30,21 +33,17 @@ export default function ServicesPage() {
               as="article"
             >
               <h2 className="font-serif text-2xl font-semibold">{service.name}</h2>
-              <p className="mt-3 leading-relaxed text-muted-foreground">{service.description}</p>
+              <p className="mt-3 leading-relaxed text-muted-foreground">{service.description ?? ""}</p>
 
               <p className="mt-6 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                Typically includes
+                Appointment length
               </p>
-              <ul className="mt-3 space-y-1.5 text-sm">
-                {service.includes.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              <p className="mt-2 text-sm">{service.durationMinutes} minutes</p>
 
               {/* mt-auto pins the link to the bottom, so cards of different
                   heights still line their links up. */}
               <Link
-                href={`/professionals?speciality=${encodeURIComponent(service.speciality)}`}
+                href="/professionals"
                 className="mt-auto pt-6 text-sm font-medium text-primary hover:underline"
               >
                 View professionals

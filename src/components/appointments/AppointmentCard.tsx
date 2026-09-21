@@ -5,6 +5,7 @@ import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
 import { canCancel, type DecoratedAppointment } from "@/lib/appointments";
 import CancelAppointment from "@/components/appointments/CancelAppointment";
+import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export default async function AppointmentCard({
   appointment,
@@ -34,11 +35,11 @@ export default async function AppointmentCard({
             <h3 className="font-semibold">{professional?.name ?? "Professional"}</h3>
             <p className="text-sm text-primary">
               {appointment.reason}
-              {professional && ` · ${professional.speciality}`}
+              {professional && ` · ${primarySpeciality(professional)}`}
             </p>
             {professional && (
               <p className="text-sm text-muted-foreground">
-                {professional.clinic}, {professional.location}
+                {clinicLine(professional)}
               </p>
             )}
           </div>

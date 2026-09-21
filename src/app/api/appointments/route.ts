@@ -2,7 +2,6 @@
 // Delete this file once the real API is ready. See docs/api-contract.md.
 
 import { bookingSchema } from "@/lib/schemas";
-import { findProfessional } from "@/lib/professional-store";
 import { resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
 import { availableSlotDays } from "@/lib/slot-availability";
 import { createAppointment, isSlotTaken, listAppointments } from "@/lib/stub-appointments";
@@ -36,10 +35,6 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
-  }
-
-  if (!findProfessional(professionalId)) {
-    return Response.json({ error: { message: "Unknown professional" } }, { status: 404 });
   }
 
   // Re-check the slot server-side. The page checked it too, but minutes may

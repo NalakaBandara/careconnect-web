@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClasses } from "@/components/Button";
 import { fetchProfessionals } from "@/lib/professionals";
-import { services } from "@/data/services";
+import { fetchServices } from "@/lib/directory";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -14,10 +14,16 @@ export default async function AdminPage() {
   // Safe to assert: admin/layout.tsx has already turned away anyone without
   // the admin role.
   const user = (await getSession())!;
-  const professionals = await fetchProfessionals();
+  const [professionals, services] = await Promise.all([
+    fetchProfessionals(),
+    fetchServices(),
+  ]);
 
+  // A doctor can hold several specialities, so each one counts.
   const bySpeciality = professionals.reduce<Record<string, number>>((counts, professional) => {
-    counts[professional.speciality] = (counts[professional.speciality] ?? 0) + 1;
+    for (const speciality of professional.specialities) {
+      counts[speciality] = (counts[speciality] ?? 0) + 1;
+    }
     return counts;
   }, {});
 
@@ -59,9 +65,6 @@ export default async function AdminPage() {
       </section>
 
       <div className="mt-8 flex flex-wrap gap-2.5">
-        <Link href="/admin/professionals" className={buttonClasses("primary", "md")}>
-          Manage professionals
-        </Link>
         <Link href="/dashboard" className={buttonClasses("outline", "md")}>
           Back to dashboard
         </Link>

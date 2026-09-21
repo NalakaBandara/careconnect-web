@@ -1,7 +1,6 @@
 // STUB. Stands in for GET /api/professionals/:id/slots on the Express API.
 // Delete this file once the real API is ready. See docs/api-contract.md.
 
-import { findProfessional } from "@/lib/professional-store";
 import { availableSlotDays } from "@/lib/slot-availability";
 
 // Public, like the rest of the directory: general availability is published
@@ -13,10 +12,6 @@ export async function GET(
   context: RouteContext<"/api/professionals/[professionalId]/slots">,
 ) {
   const { professionalId } = await context.params;
-
-  if (!findProfessional(professionalId)) {
-    return Response.json({ error: { message: "Professional not found" } }, { status: 404 });
-  }
 
   return Response.json(
     { days: availableSlotDays(professionalId) },

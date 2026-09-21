@@ -7,6 +7,7 @@ import CancelAppointment from "@/components/appointments/CancelAppointment";
 import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
 import { canCancel, fetchAppointment } from "@/lib/appointments";
+import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export const metadata: Metadata = {
   title: "Appointment details",
@@ -30,8 +31,7 @@ export default async function AppointmentDetailPage({
   const facts: [string, string][] = [
     ["Date", appointment.longDate],
     ["Time", `${appointment.time} (${appointment.durationMinutes} minutes)`],
-    ["Clinic", professional?.clinic ?? "—"],
-    ["Location", professional?.location ?? "—"],
+    ["Clinic", professional ? clinicLine(professional) : "—"],
     ["Reference", appointment.reference],
   ];
 
@@ -71,7 +71,7 @@ export default async function AppointmentDetailPage({
               />
               <div>
                 <p className="font-semibold">{professional.name}</p>
-                <p className="text-sm text-primary">{professional.speciality}</p>
+                <p className="text-sm text-primary">{primarySpeciality(professional)}</p>
               </div>
             </div>
           )}

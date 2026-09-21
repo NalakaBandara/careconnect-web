@@ -6,6 +6,7 @@ import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
 import { fetchAppointments, splitAppointments } from "@/lib/appointments";
 import { getSession } from "@/lib/session";
+import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -73,11 +74,11 @@ export default async function DashboardPage() {
                 <p className="font-semibold">{nextProfessional?.name}</p>
                 <p className="text-sm text-primary">
                   {next.reason}
-                  {nextProfessional && ` · ${nextProfessional.speciality}`}
+                  {nextProfessional && ` · ${primarySpeciality(nextProfessional)}`}
                 </p>
                 {nextProfessional && (
                   <p className="text-sm text-muted-foreground">
-                    {nextProfessional.clinic}, {nextProfessional.location}
+                    {clinicLine(nextProfessional)}
                   </p>
                 )}
               </div>

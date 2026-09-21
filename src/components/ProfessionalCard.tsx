@@ -2,8 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { buttonClasses } from "@/components/Button";
 import type { Professional } from "@/types";
+import { clinicLine, experienceLine, primarySpeciality } from "@/lib/professional-format";
 
 export default function ProfessionalCard({ professional }: { professional: Professional }) {
+  const experience = experienceLine(professional);
+
   return (
     <article className="flex h-full flex-col rounded-lg border border-border bg-background p-5 shadow-soft">
       <div className="flex items-start gap-4">
@@ -18,30 +21,32 @@ export default function ProfessionalCard({ professional }: { professional: Profe
         />
         <div className="min-w-0">
           <h3 className="font-serif text-lg font-semibold leading-snug">{professional.name}</h3>
-          <p className="text-sm text-primary">{professional.speciality}</p>
+          <p className="text-sm text-primary">{primarySpeciality(professional)}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {professional.clinic}, {professional.location}
+            {clinicLine(professional)}
           </p>
         </div>
       </div>
 
       <div className="mt-5 space-y-3 border-t border-border pt-4 text-sm">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Main services
-          </p>
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
-            {professional.services.map((service) => (
-              <li
-                key={service}
-                className="rounded-md bg-surface px-2 py-1 text-xs text-secondary-foreground"
-              >
-                {service}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <p className="text-muted-foreground">{professional.availabilitySummary}</p>
+        {professional.specialities.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Specialities
+            </p>
+            <ul className="mt-1.5 flex flex-wrap gap-1.5">
+              {professional.specialities.map((speciality) => (
+                <li
+                  key={speciality}
+                  className="rounded-md bg-surface px-2 py-1 text-xs text-secondary-foreground"
+                >
+                  {speciality}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {experience && <p className="text-muted-foreground">{experience}</p>}
       </div>
 
       <div className="mt-5 pt-1">

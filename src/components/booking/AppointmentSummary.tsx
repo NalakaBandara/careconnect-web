@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Professional } from "@/types";
+import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export default function AppointmentSummary({
   professional,
@@ -32,7 +33,7 @@ export default function AppointmentSummary({
         />
         <div>
           <p className="font-semibold">{professional.name}</p>
-          <p className="text-sm text-primary">{professional.speciality}</p>
+          <p className="text-sm text-primary">{primarySpeciality(professional)}</p>
         </div>
       </div>
 
@@ -50,7 +51,7 @@ export default function AppointmentSummary({
         <div className="flex gap-2">
           <dt className="sr-only">Clinic</dt>
           <dd className="text-muted-foreground">
-            {professional.clinic}, {professional.location}
+            {clinicLine(professional)}
           </dd>
         </div>
       </dl>
