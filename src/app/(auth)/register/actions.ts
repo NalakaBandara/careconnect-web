@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { registerSchema } from "@/lib/schemas";
+import { createSession } from "@/lib/session";
 
 // What the form gets back after a submit.
 export type RegisterState = {
@@ -49,6 +50,14 @@ export async function registerAction(
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
+    // CONFLICT means the email is already registered. The API sends one
+    // message for the whole form, so until it reports per-field errors we
+    // place that one ourselves - it is the only field it can be about.
+    if (response.status === 409) {
+      const message = body?.error?.message ?? "That email is already registered";
+      return { message, fields: { email: [message] }, values };
+    }
+
     return {
       message: body?.error?.message ?? "Registration failed. Please try again.",
       fields: body?.error?.fields,
@@ -56,6 +65,13 @@ export async function registerAction(
     };
   }
 
-  // redirect() works by throwing, so it must sit outside any try/catch.
+  // The API hands back a token with the new account, so there is no reason to
+  // make somebody type the password they just chose. Sign them straight in.
+  if (body?.accessToken) {
+    await createSession(body.accessToken);
+    // redirect() works by throwing, so it must sit outside any try/catch.
+    redirect("/dashboard");
+  }
+
   redirect("/login?registered=1");
 }

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { professionalSchema } from "@/lib/schemas";
-import { getSession, getSessionToken, hasRole } from "@/lib/session";
+import { getSession, getSessionToken, isAdmin } from "@/lib/session";
 
 export type ProfessionalFormState = {
   message?: string;
@@ -35,7 +35,7 @@ function readForm(formData: FormData): Record<string, string> {
 async function requireAdmin() {
   const user = await getSession();
   if (!user) redirect("/login");
-  if (!hasRole(user, "admin")) redirect("/forbidden");
+  if (!isAdmin(user)) redirect("/forbidden");
 }
 
 // Editing a professional changes what the public directory shows, so the

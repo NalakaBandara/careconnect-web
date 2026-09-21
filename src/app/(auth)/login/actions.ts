@@ -44,18 +44,21 @@ export async function loginAction(
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
+    // The API returns one message for the whole form, not per field, and for a
+    // failed login that is deliberate: saying which of the email or password
+    // was wrong would tell a stranger which emails are registered.
     return {
       message: body?.error?.message ?? "Login failed. Please try again.",
       values,
     };
   }
 
-  if (!body?.token) {
+  if (!body?.accessToken) {
     return { message: "The server did not return a session token.", values };
   }
 
   // Store the token in an httpOnly cookie. From here on the user is logged in.
-  await createSession(body.token);
+  await createSession(body.accessToken);
 
   // Outside any try/catch - redirect() signals by throwing.
   redirect("/dashboard");

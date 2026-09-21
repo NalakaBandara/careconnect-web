@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { decodeJwt, jwtVerify } from "jose";
+
+import { isAdminRole } from "@/lib/roles";
 
 // Runs before every matching request. In Next 16 this file is called proxy.ts
 // (it used to be middleware.ts - most tutorials still show the old name).
@@ -17,15 +19,30 @@ const GUEST_ONLY = ["/login", "/register"];
 
 type Claims = { roles?: unknown };
 
+// Same rule as src/lib/session.ts: the API signs the token, so the signature
+// can only be checked if that secret is shared with us. Either way this file
+// is optimistic by design - the pages behind it check again, and the API is
+// the thing that actually refuses forged tokens.
 async function readClaims(token: string | undefined): Promise<Claims | null> {
   if (!token) return null;
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) return null;
+
+  const apiSecret = process.env.API_JWT_SECRET;
+
+  if (apiSecret) {
+    try {
+      const { payload } = await jwtVerify(token, new TextEncoder().encode(apiSecret));
+      return payload as Claims;
+    } catch {
+      return null; // expired or tampered with
+    }
+  }
+
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+    const payload = decodeJwt(token);
+    if (typeof payload.exp === "number" && payload.exp * 1000 <= Date.now()) return null;
     return payload as Claims;
   } catch {
-    return null; // expired or tampered with
+    return null;
   }
 }
 
@@ -49,7 +66,7 @@ export async function proxy(request: NextRequest) {
 
   // Logged in but not an admin: this is a 403, not a login problem.
   // Redirecting to /login would imply signing in again would help. It would not.
-  if (NEEDS_ADMIN.some((path) => pathname.startsWith(path)) && !roles.includes("admin")) {
+  if (NEEDS_ADMIN.some((path) => pathname.startsWith(path)) && !isAdminRole(roles)) {
     return NextResponse.redirect(new URL("/forbidden", request.url));
   }
 

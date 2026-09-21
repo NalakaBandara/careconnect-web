@@ -1,5 +1,5 @@
 import DashboardNav from "@/components/dashboard/DashboardNav";
-import { getSession, hasRole } from "@/lib/session";
+import { getSession, isAdmin } from "@/lib/session";
 
 // The shell every dashboard page sits inside. A layout does not re-render when
 // you move between its children, so the sidebar is rendered once and stays put
@@ -15,7 +15,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
         {/* On a narrow screen the sidebar becomes a scrollable row of tabs
             above the content rather than disappearing. */}
         <aside className="border-b border-border pb-4 lg:border-b-0 lg:pb-0">
-          <DashboardNav isAdmin={hasRole(user, "admin")} />
+          <DashboardNav isAdmin={isAdmin(user)} />
         </aside>
 
         {/* A landmark, so assistive technology can skip the sidebar. */}
