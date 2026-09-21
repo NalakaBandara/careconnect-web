@@ -1,32 +1,43 @@
-export type Speciality =
-  | "General Practice"
-  | "Dentistry"
-  | "Mental Health"
-  | "Physiotherapy"
-  | "Dermatology"
-  | "Women's Health";
+// Shapes that mirror the CareConnect API. Where a field can be missing there,
+// it is optional or nullable here, rather than being invented to keep an older
+// shape alive.
 
+export interface Clinic {
+  id: string;
+  name: string;
+  city: string | null;
+  addressLine1?: string | null;
+  telephone?: string | null;
+}
+
+export interface Speciality {
+  id: string;
+  name: string;
+  description?: string | null;
+}
+
+// A doctor, in the vocabulary this site uses with patients. The API calls it a
+// doctor; the pages and URLs say "professional", which is the word in the
+// designs and reads better for a directory that is not only doctors.
 export interface Professional {
   id: string;
   name: string;
-  speciality: Speciality;
-  qualifications: string;
-  clinic: string;
-  location: string;
-  services: string[];
-  availabilitySummary: string;
-  generalAvailability: string[];
+  // Plural: a doctor can hold several, and the API returns a list.
+  specialities: string[];
+  yearsOfExperience: number | null;
+  // The API verifies a doctor's licence. Patients should see that.
+  isVerified: boolean;
+  clinics: Clinic[];
   summary: string;
   photo: string;
   photoAlt: string;
 }
 
 export interface Service {
-  slug: string;
+  id: string;
   name: string;
-  description: string;
-  speciality: Speciality;
-  includes: string[];
+  description: string | null;
+  durationMinutes: number;
 }
 
 export interface Faq {
@@ -36,9 +47,8 @@ export interface Faq {
 
 export interface ProfessionalQuery {
   term: string;
-  location: string;
+  location: string; // a clinic city
   speciality: string;
-  service: string;
 }
 
 // --- Appointment booking ---
