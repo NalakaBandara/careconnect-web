@@ -11,6 +11,11 @@ is given.
 
 ## Summary
 
+**15 defects found, 12 fixed, 3 open.** The three open ones are recorded with the reason
+rather than dropped: one is emitted by React itself and one is a brand decision that also
+lives in the Figma file.
+
+
 | Area | Method | Status |
 |---|---|---|
 | W3C HTML validation | W3C Nu validator, all 15 pages | 3 defects found and fixed, 1 open (framework) |
@@ -18,7 +23,7 @@ is given.
 | Colour contrast | WCAG AA calculated from the design tokens | 3 failures, accepted as a known exception |
 | Authentication and permissions | Manual, against the live API | Passing |
 | Cross-user data visibility | Manual, two accounts | Passing |
-| Unit and component tests | Vitest | Set up, suite written after the API migration |
+| Unit and component tests | Vitest, 85 tests | 2 defects found and fixed |
 | Responsiveness | Not yet run | Pending |
 | Usability with real users | Not yet run | Pending |
 
@@ -238,11 +243,84 @@ was misleading, not the data.
 
 ---
 
-## 5. Still to run
+## 5. Automated tests
+
+**Method.** Vitest with React Testing Library, run by `npm test`. 85 tests across 12 files,
+about 13 seconds.
+
+Components are queried the way a person finds them, by their label or their role, rather than
+by CSS class. A test that looks for "the button named Log in" fails when that button stops
+being reachable; one that looks for `.btn-primary` passes even when nobody can use it.
+
+**What is covered.**
+
+| Area | Examples |
+|---|---|
+| Validation rules | Every field, empty values, malformed emails, password rules, the consent checkbox, length limits |
+| Roles | That `CLINIC_ADMIN` and `STAFF` do **not** count as site admin |
+| Date handling | That a date never shifts by a day whatever the machine's timezone |
+| Display helpers | What a page shows when the API returns nothing, which it frequently does |
+| Modal | Escape, focus moving in, Tab wrapping both ways, focus returning, scroll lock |
+| Forms | Errors reaching a live region, field errors tied to their own box, values returned, the password never returned |
+| Filters | That a choice is written to the URL rather than held in state |
+
+### DEF-014: a trailing space in an email broke registration
+
+**Severity:** high. **Fixed.** Found by the first test written against the validation rules.
+
+The rule was written as `z.email(...).trim().toLowerCase()`, which validates **first** and
+trims **afterwards**. So an address that looked perfectly correct was rejected:
+
+```
+"amara@example.com"       accepted
+" amara@example.com"      REJECTED: Enter a valid email address
+"amara@example.com "      REJECTED: Enter a valid email address
+"  Amara@Example.COM  "   REJECTED: Enter a valid email address
+```
+
+**Why it mattered.** Phone keyboards and copy-paste add trailing spaces constantly. Somebody
+could have been unable to register, staring at a correct email and an error saying it was
+invalid, with nothing visibly wrong. It affected registration, login and the contact form.
+
+**Fix.** Trim and lowercase first, then pipe into the email check. All four inputs above now
+normalise to `amara@example.com`.
+
+**Why the tests found it and manual testing had not.** Every manual check had typed a clean
+address. The test asked the question directly, which is the argument for testing the rules
+themselves rather than only through a form.
+
+### DEF-015: a doctor's speciality was printed twice on each card
+
+**Severity:** low, cosmetic. **Fixed.**
+
+Introduced during the API migration. The card showed the first speciality under the name and
+then listed all of them again below, so a doctor with one speciality had it printed twice.
+
+**How it was caught.** `getByText` throws when it matches more than once, so a test simply
+asking for the speciality failed with "multiple elements found". A test written to check
+content found a layout bug as a side effect.
+
+**Fix.** The header now carries every speciality, comma separated, and the area below shows
+experience and the licence verification instead.
+
+### Not a defect, but worth recording
+
+A filter test tried to import a helper from `@/lib/directory` and failed to run:
+
+```
+Error: This module cannot be imported from a Client Component module.
+```
+
+That is the `server-only` marker working as designed, refusing to let server code into a
+browser context. The test was changed to define its own value rather than reshaping working
+code to suit it.
+
+---
+
+## 6. Still to run
 
 | Area | Note |
 |---|---|
-| Unit and component tests | Tooling installed; suite deliberately deferred until the API migration is finished, so the tests are written against the shapes being kept |
 | End-to-end workflows | Needs a browser-driving tool; async Server Components cannot be unit tested |
 | Responsiveness | At real phone and tablet widths |
 | Usability with real users | |
