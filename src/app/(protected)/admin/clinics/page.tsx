@@ -87,6 +87,12 @@ export default async function AdminClinicsPage({ searchParams }: PageProps<"/adm
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
                       <Link
+                        href={`/admin/clinics/${clinic.id}/services`}
+                        className={buttonClasses("ghost", "sm")}
+                      >
+                        Services
+                      </Link>
+                      <Link
                         href={`/admin/clinics/${clinic.id}/edit`}
                         className={buttonClasses("outline", "sm")}
                       >

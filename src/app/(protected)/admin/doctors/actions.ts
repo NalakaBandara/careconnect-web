@@ -3,7 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createSchedule, promoteToDoctor, updateDoctor } from "@/lib/admin";
+import {
+  addDoctorClinic,
+  addDoctorSpeciality,
+  createSchedule,
+  promoteToDoctor,
+  removeDoctorClinic,
+  removeDoctorSpeciality,
+  updateDoctor,
+} from "@/lib/admin";
 import { getSession, isAdmin } from "@/lib/session";
 
 export type DoctorFormState = {
@@ -197,4 +205,43 @@ export async function createScheduleAction(
   revalidatePath(`/admin/doctors/${doctorId}/schedules`);
   revalidatePath(`/book/${doctorId}`);
   redirect(`/admin/doctors/${doctorId}/schedules?added=1`);
+}
+
+export type LinkState = { message?: string };
+
+// Attaching and detaching, not creating and destroying. A doctor with no
+// clinics cannot be booked, so this is how somebody is taken out of the
+// directory without destroying appointments already booked with them.
+export async function linkClinicAction(
+  input: { doctorId: string; clinicId: string; attach: boolean },
+  _prev: LinkState,
+): Promise<LinkState> {
+  await requireAdmin();
+
+  const { error } = input.attach
+    ? await addDoctorClinic(input.doctorId, input.clinicId)
+    : await removeDoctorClinic(input.doctorId, input.clinicId);
+
+  if (error) return { message: error };
+
+  revalidateEverywhere(input.doctorId);
+  // Working hours belong to a clinic, so which slots exist changes too.
+  revalidatePath(`/book/${input.doctorId}`);
+  return {};
+}
+
+export async function linkSpecialityAction(
+  input: { doctorId: string; specialtyId: string; attach: boolean },
+  _prev: LinkState,
+): Promise<LinkState> {
+  await requireAdmin();
+
+  const { error } = input.attach
+    ? await addDoctorSpeciality(input.doctorId, input.specialtyId)
+    : await removeDoctorSpeciality(input.doctorId, input.specialtyId);
+
+  if (error) return { message: error };
+
+  revalidateEverywhere(input.doctorId);
+  return {};
 }

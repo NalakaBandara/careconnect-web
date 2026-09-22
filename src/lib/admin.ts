@@ -190,3 +190,49 @@ export const checkInAppointment = (id: string, notes?: string) =>
     method: "POST",
     body: JSON.stringify({ status: "ARRIVED", ...(notes ? { notes } : {}) }),
   });
+
+// --- Links between things ---------------------------------------------------
+
+// These attach and detach rather than create and destroy. Unlinking a service
+// from a clinic leaves the service itself alone, so every other clinic keeps
+// offering it and this one can attach it again later.
+
+export const addDoctorClinic = (doctorId: string, clinicId: string) =>
+  call(`/doctors/${encodeURIComponent(doctorId)}/clinics`, {
+    method: "POST",
+    body: JSON.stringify({ clinicId }),
+  });
+
+// A doctor with no clinics cannot be booked, because an appointment is always
+// made at one. So this is how somebody is taken out of the directory without
+// destroying the appointments already booked with them.
+export const removeDoctorClinic = (doctorId: string, clinicId: string) =>
+  call(`/doctors/${encodeURIComponent(doctorId)}/clinics/${encodeURIComponent(clinicId)}`, {
+    method: "DELETE",
+  });
+
+export const addDoctorSpeciality = (doctorId: string, specialtyId: string) =>
+  call(`/doctors/${encodeURIComponent(doctorId)}/specialties`, {
+    method: "POST",
+    body: JSON.stringify({ specialtyId }),
+  });
+
+export const removeDoctorSpeciality = (doctorId: string, specialtyId: string) =>
+  call(
+    `/doctors/${encodeURIComponent(doctorId)}/specialties/${encodeURIComponent(specialtyId)}`,
+    { method: "DELETE" },
+  );
+
+export const fetchClinicServices = (clinicId: string) =>
+  list<Service>(`/clinics/${encodeURIComponent(clinicId)}/services`);
+
+export const addClinicService = (clinicId: string, serviceId: string) =>
+  call(`/clinics/${encodeURIComponent(clinicId)}/services`, {
+    method: "POST",
+    body: JSON.stringify({ serviceId }),
+  });
+
+export const removeClinicService = (clinicId: string, serviceId: string) =>
+  call(`/clinics/${encodeURIComponent(clinicId)}/services/${encodeURIComponent(serviceId)}`, {
+    method: "DELETE",
+  });

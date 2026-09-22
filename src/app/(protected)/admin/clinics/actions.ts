@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createClinic, deleteClinic, updateClinic, type ClinicInput } from "@/lib/admin";
+import {
+  addClinicService,
+  createClinic,
+  deleteClinic,
+  removeClinicService,
+  updateClinic,
+  type ClinicInput,
+} from "@/lib/admin";
 import { getSession, isAdmin } from "@/lib/session";
 
 export type ClinicFormState = {
@@ -120,4 +127,25 @@ export async function deleteClinicAction(
 
   revalidateEverywhere();
   redirect("/admin/clinics?removed=1");
+}
+
+export type LinkState = { message?: string };
+
+// Attach or detach a service from one clinic. The service itself is untouched,
+// so every other clinic keeps offering it and this one can attach it again.
+export async function linkServiceAction(
+  input: { clinicId: string; serviceId: string; attach: boolean },
+  _prev: LinkState,
+): Promise<LinkState> {
+  await requireAdmin();
+
+  const { error } = input.attach
+    ? await addClinicService(input.clinicId, input.serviceId)
+    : await removeClinicService(input.clinicId, input.serviceId);
+
+  if (error) return { message: error };
+
+  revalidatePath(`/admin/clinics/${input.clinicId}/services`);
+  revalidateEverywhere();
+  return {};
 }
