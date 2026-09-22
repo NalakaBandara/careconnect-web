@@ -8,6 +8,7 @@ const ITEMS = [
   { label: "Appointments", href: "/admin/appointments" as const },
   { label: "Doctors", href: "/admin/doctors" as const },
   { label: "Clinics", href: "/admin/clinics" as const },
+  { label: "Services", href: "/admin/services" as const },
 ];
 
 export default function AdminNav() {

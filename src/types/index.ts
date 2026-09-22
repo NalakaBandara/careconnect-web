@@ -38,6 +38,9 @@ export interface Service {
   name: string;
   description: string | null;
   durationMinutes: number;
+  // "ACTIVE" or "INACTIVE". A retired service is kept rather than deleted, so
+  // appointments already booked against it still make sense.
+  status?: string;
 }
 
 export interface Faq {
