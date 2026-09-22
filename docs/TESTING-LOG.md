@@ -317,11 +317,36 @@ code to suit it.
 
 ---
 
-## 6. Still to run
+## 6. API integration, end to end
+
+**Method.** Manual, against the live CareConnect API, driving the real pages.
+
+| Check | Result |
+|---|---|
+| Booking page shows real availability | Yes, "5 free" and "6 free" from the doctor's actual schedules |
+| Slot links carry date, time and clinic | Yes |
+| Choosing a free slot reaches step 2 | Yes, with the real clinic, service and duration |
+| A made-up time in the URL | Falls back to step 1, cannot reach the form |
+| Booking created through the API | 201 with a real booking reference |
+| Our appointments list | Shows it: reference, doctor, reason, "Awaiting clinic" |
+| Our dashboard | "You have 1 upcoming appointment", next appointment shown |
+| Detail page, owner | 200 |
+| Detail page, a different signed-in user | **404** |
+| Detail page, a made-up reference | 404 |
+| Detail page, guest | Redirected to login with a return path |
+
+The cross-user case is the one that matters: appointments are addressed in our
+URLs by booking reference, which is short enough to guess, so it is looked up
+inside the caller's own list. Someone else's reference is not found rather
+than refused, which also avoids confirming that it exists.
+
+---
+
+## 7. Still to run
 
 | Area | Note |
 |---|---|
 | End-to-end workflows | Needs a browser-driving tool; async Server Components cannot be unit tested |
 | Responsiveness | At real phone and tablet widths |
 | Usability with real users | |
-| Booking and admin coverage | Blocked: no doctor schedule exists in the API, and no admin account is available |
+| Admin screens | Being rebuilt against the API's model, where an admin promotes an existing user rather than creating a doctor |
