@@ -56,10 +56,14 @@ export interface ProfessionalQuery {
 export interface Slot {
   time: string; // "09:30"
   taken: boolean;
+  endTime?: string; // "10:00", from the API's own slot length
+  // Which of the doctor's weekly schedules this slot came from. The API wants
+  // it back when the appointment is booked.
+  scheduleId?: string;
 }
 
 export interface SlotGroup {
-  label: string; // "Morning" | "Evening"
+  label: string; // "Morning" | "Afternoon"
   slots: Slot[];
 }
 
@@ -72,18 +76,26 @@ export interface SlotDay {
   groups: SlotGroup[];
 }
 
-export type AppointmentStatus = "confirmed" | "awaiting" | "cancelled" | "completed";
+// The API's own statuses, uppercase.
+export type AppointmentStatus =
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW";
 
 export interface Appointment {
-  reference: string; // "CC-4821-MEH"
-  userId: string;
-  professionalId: string;
-  date: string; // "2026-09-17"
-  time: string; // "09:30"
-  durationMinutes: number;
-  reason: string;
-  notes: string;
-  contactNumber: string;
+  id: string;
+  bookingReference: string;
+  doctor: { id: string; firstName: string; lastName: string };
+  clinic: { id: string; name: string };
+  service: { id: string; name: string; durationMinutes: number };
+  doctorScheduleId: string;
+  appointmentDate: string; // "2026-09-28"
+  startTime: string; // "09:00:00"
+  endTime: string;
   status: AppointmentStatus;
+  reason: string | null;
+  notes: string | null;
   createdAt: string;
 }
