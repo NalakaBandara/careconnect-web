@@ -12,6 +12,7 @@ import {
   removeDoctorSpeciality,
   updateDoctor,
 } from "@/lib/admin";
+import { fetchProfessional } from "@/lib/directory";
 import { getSession, isAdmin } from "@/lib/session";
 
 export type DoctorFormState = {
@@ -217,6 +218,22 @@ export async function linkClinicAction(
   _prev: LinkState,
 ): Promise<LinkState> {
   await requireAdmin();
+
+  // Removing the last clinic does not merely hide a doctor: the API stops
+  // returning them at all, so GET /doctors/:id gives a 404 and this very page
+  // can no longer be loaded. There would be no way to undo it.
+  //
+  // Verified against the live API: with no clinics, /doctors returns an empty
+  // list and /doctors/1 returns 404.
+  if (!input.attach) {
+    const doctor = await fetchProfessional(input.doctorId);
+    if (doctor && doctor.clinics.length <= 1) {
+      return {
+        message:
+          "This is their only clinic. Removing it would hide the doctor completely, including from this page, with no way back. Add another clinic first.",
+      };
+    }
+  }
 
   const { error } = input.attach
     ? await addDoctorClinic(input.doctorId, input.clinicId)

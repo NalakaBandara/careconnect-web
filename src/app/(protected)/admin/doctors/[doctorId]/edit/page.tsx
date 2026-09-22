@@ -47,9 +47,11 @@ export default async function EditDoctorPage({
       <section className="mt-12 max-w-2xl">
         <h2 className="font-serif text-xl font-semibold">Clinics</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Appointments are always made at a clinic, so a doctor with none cannot be booked.
-          Removing every clinic is how somebody is taken out of the directory without
+          Appointments are always made at a clinic. A doctor with none disappears from the
+          public directory entirely, which is how somebody is taken out of use without
           destroying the appointments already booked with them.
+          Their last clinic cannot be removed here, because the API would then stop
+          returning them at all and this page could no longer be opened.
         </p>
 
         {doctor.clinics.length === 0 && (

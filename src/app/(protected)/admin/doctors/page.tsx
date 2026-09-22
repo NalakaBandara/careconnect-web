@@ -108,9 +108,9 @@ export default async function AdminDoctorsPage({ searchParams }: PageProps<"/adm
           every clinic is the supported way to take somebody out of use. */}
       <p className="mt-4 text-sm text-muted-foreground">
         Doctors are not deleted, because appointments already booked with them would lose
-        their record. To take somebody out of the directory, open Edit and remove their
-        clinics: an appointment is always made at a clinic, so a doctor with none cannot be
-        booked.
+        their record. A doctor stops appearing publicly once they have no clinics, but the
+        last one cannot be removed here: the API then stops returning them entirely, and
+        there would be no way to bring them back.
       </p>
     </div>
   );
