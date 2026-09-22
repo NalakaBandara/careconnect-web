@@ -8,6 +8,10 @@ import type { BookingState } from "@/app/(protected)/book/[professionalId]/actio
 
 type Action = (prev: BookingState, formData: FormData) => Promise<BookingState>;
 
+// The API stores a reason and nothing else, so that plus consent is all this
+// asks for. The old version collected a name and contact number as well, which
+// the account already holds; asking again would be collecting them twice and
+// giving the clinic two versions to reconcile.
 export default function BookingDetailsForm({
   action,
   professionalId,
@@ -19,15 +23,13 @@ export default function BookingDetailsForm({
 }) {
   const [state, formAction, isPending] = useActionState(action, {});
 
-  // Small helper so each field wires up its own error the same way.
-  const errorFor = (name: keyof NonNullable<BookingState["fields"]>) =>
-    state.fields?.[name]?.[0];
+  const errorFor = (name: "reason" | "consent") => state.fields?.[name]?.[0];
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
       {state.message && (
         // role="alert" makes a screen reader announce this the moment it
-        // appears, without the user having to go looking for it.
+        // appears, rather than the user having to go looking for it.
         <p
           role="alert"
           className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
@@ -36,46 +38,23 @@ export default function BookingDetailsForm({
         </p>
       )}
 
-      <Field
-        name="fullName"
-        label="Full name"
-        defaultValue={state.values?.fullName}
-        autoComplete="name"
-        error={errorFor("fullName")}
-      />
-
-      <Field
-        name="contactNumber"
-        label="Contact number"
-        type="tel"
-        defaultValue={state.values?.contactNumber}
-        autoComplete="tel"
-        error={errorFor("contactNumber")}
-      />
-
-      <Field
-        name="reason"
-        label="Reason for visit"
-        defaultValue={state.values?.reason}
-        error={errorFor("reason")}
-      />
-
       <div className="space-y-1.5">
-        <label htmlFor="notes" className="text-sm font-medium">
-          Anything the clinic should know? <span className="text-muted-foreground">(optional)</span>
+        <label htmlFor="reason" className="text-sm font-medium">
+          Reason for visit
         </label>
-        <textarea
-          id="notes"
-          name="notes"
-          rows={4}
-          defaultValue={state.values?.notes}
-          aria-invalid={errorFor("notes") ? true : undefined}
-          aria-describedby={errorFor("notes") ? "notes-error" : undefined}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        <Input
+          id="reason"
+          name="reason"
+          defaultValue={state.values?.reason}
+          // aria-invalid marks the field itself as wrong; aria-describedby ties
+          // the message to it, so a screen reader reads both together.
+          aria-invalid={errorFor("reason") ? true : undefined}
+          aria-describedby={errorFor("reason") ? "reason-error" : undefined}
+          className={errorFor("reason") ? "border-destructive" : ""}
         />
-        {errorFor("notes") && (
-          <p id="notes-error" className="text-sm text-destructive">
-            {errorFor("notes")}
+        {errorFor("reason") && (
+          <p id="reason-error" className="text-sm text-destructive">
+            {errorFor("reason")}
           </p>
         )}
       </div>
@@ -105,9 +84,8 @@ export default function BookingDetailsForm({
         <Button type="submit" disabled={isPending}>
           {isPending ? "Confirming…" : "Confirm booking"}
         </Button>
-        {/* Built here rather than passed in as a finished string. typedRoutes
-            can only check a template literal where it is written, so keeping
-            it next to the <Link> keeps the route checked instead of casting. */}
+        {/* Built here rather than passed in as a finished string: typedRoutes
+            can only check a template literal where it is written. */}
         <Link
           href={`/book/${professionalId}?date=${date}`}
           className={buttonClasses("outline", "md")}
@@ -116,39 +94,5 @@ export default function BookingDetailsForm({
         </Link>
       </div>
     </form>
-  );
-}
-
-function Field({
-  name,
-  label,
-  error,
-  ...props
-}: {
-  name: string;
-  label: string;
-  error?: string;
-} & React.ComponentProps<"input">) {
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={name} className="text-sm font-medium">
-        {label}
-      </label>
-      <Input
-        id={name}
-        name={name}
-        // aria-invalid marks the field itself as wrong; aria-describedby ties
-        // the message to it, so a screen reader reads both together.
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${name}-error` : undefined}
-        className={error ? "border-destructive" : ""}
-        {...props}
-      />
-      {error && (
-        <p id={`${name}-error`} className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }

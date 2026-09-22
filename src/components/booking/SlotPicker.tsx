@@ -8,16 +8,19 @@ export default function SlotPicker({
   professionalId,
   days,
   selectedDay,
+  clinicId,
   reschedule,
 }: {
   professionalId: string;
   days: SlotDay[];
   selectedDay: SlotDay | undefined;
+  clinicId: string;
   reschedule?: string;
 }) {
-  // Carried through every link so a reschedule keeps moving the existing
-  // appointment rather than quietly turning into a new booking.
-  const keep = reschedule ? `&reschedule=${reschedule}` : "";
+  // Carried through every link: the clinic because availability is per clinic,
+  // and the reference so a reschedule keeps moving the existing appointment
+  // rather than quietly turning into a new booking.
+  const keep = `&clinic=${clinicId}${reschedule ? `&reschedule=${reschedule}` : ""}`;
 
   return (
     <div>
@@ -109,8 +112,8 @@ export default function SlotPicker({
         </div>
       ) : (
         <p className="mt-8 rounded-lg border border-dashed border-border-strong bg-surface p-6 text-sm text-muted-foreground">
-          There are no free appointments in the next seven days. Please check back, or contact the
-          clinic directly.
+          There are no free appointments at this clinic in the next two weeks. Please check
+          back, or contact the clinic directly.
         </p>
       )}
     </div>

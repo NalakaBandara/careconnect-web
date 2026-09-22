@@ -8,12 +8,16 @@ export default function AppointmentSummary({
   time,
   durationMinutes,
   title,
+  clinicName,
+  serviceName,
 }: {
   professional: Professional;
   longDate: string;
   time: string;
   durationMinutes: number;
   title?: string;
+  clinicName?: string;
+  serviceName?: string;
 }) {
   return (
     <div className="rounded-lg border border-border bg-background p-6 shadow-soft">
@@ -33,7 +37,9 @@ export default function AppointmentSummary({
         />
         <div>
           <p className="font-semibold">{professional.name}</p>
-          <p className="text-sm text-primary">{primarySpeciality(professional)}</p>
+          <p className="text-sm text-primary">
+            {serviceName ?? primarySpeciality(professional)}
+          </p>
         </div>
       </div>
 
@@ -51,7 +57,7 @@ export default function AppointmentSummary({
         <div className="flex gap-2">
           <dt className="sr-only">Clinic</dt>
           <dd className="text-muted-foreground">
-            {clinicLine(professional)}
+            {clinicName ?? clinicLine(professional)}
           </dd>
         </div>
       </dl>

@@ -59,7 +59,7 @@ export default async function AppointmentsPage({
       {shown.length > 0 ? (
         <div className="mt-4 space-y-4">
           {shown.map((appointment) => (
-            <AppointmentCard key={appointment.reference} appointment={appointment} />
+            <AppointmentCard key={appointment.bookingReference} appointment={appointment} />
           ))}
         </div>
       ) : (

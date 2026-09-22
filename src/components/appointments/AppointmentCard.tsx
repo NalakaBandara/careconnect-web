@@ -12,7 +12,7 @@ export default async function AppointmentCard({
 }: {
   appointment: DecoratedAppointment;
 }) {
-  const professional = await fetchProfessional(appointment.professionalId);
+  const professional = await fetchProfessional(appointment.doctor.id);
 
   return (
     <article className="overflow-hidden rounded-lg border border-border bg-background shadow-soft">
@@ -58,13 +58,13 @@ export default async function AppointmentCard({
           </div>
           <div className="flex gap-2">
             <dt className="sr-only">Reference</dt>
-            <dd className="text-muted-foreground">Reference {appointment.reference}</dd>
+            <dd className="text-muted-foreground">Reference {appointment.bookingReference}</dd>
           </div>
         </dl>
 
         <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <Link
-            href={`/dashboard/appointments/${appointment.reference}`}
+            href={`/dashboard/appointments/${appointment.bookingReference}`}
             className={buttonClasses("outline", "sm")}
           >
             View details
@@ -76,13 +76,13 @@ export default async function AppointmentCard({
                   the slot picker. The reference tells it to move an existing
                   appointment instead of creating a new one. */}
               <Link
-                href={`/book/${appointment.professionalId}?reschedule=${appointment.reference}`}
+                href={`/book/${appointment.doctor.id}?reschedule=${appointment.bookingReference}`}
                 className={buttonClasses("outline", "sm")}
               >
                 Reschedule
               </Link>
               <CancelAppointment
-                reference={appointment.reference}
+                reference={appointment.bookingReference}
                 professionalName={professional?.name ?? "this professional"}
               />
             </>

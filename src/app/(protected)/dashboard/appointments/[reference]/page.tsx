@@ -6,7 +6,7 @@ import StatusBadge from "@/components/appointments/StatusBadge";
 import CancelAppointment from "@/components/appointments/CancelAppointment";
 import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
-import { canCancel, fetchAppointment } from "@/lib/appointments";
+import { canCancel, fetchAppointmentByReference } from "@/lib/appointments";
 import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export const metadata: Metadata = {
@@ -23,16 +23,16 @@ export default async function AppointmentDetailPage({
 
   // Scoped to the signed-in user inside fetchAppointment, so another user's
   // reference gives a 404 rather than their appointment.
-  const appointment = await fetchAppointment(reference);
+  const appointment = await fetchAppointmentByReference(reference);
   if (!appointment) notFound();
 
-  const professional = await fetchProfessional(appointment.professionalId);
+  const professional = await fetchProfessional(appointment.doctor.id);
 
   const facts: [string, string][] = [
     ["Date", appointment.longDate],
     ["Time", `${appointment.time} (${appointment.durationMinutes} minutes)`],
     ["Clinic", professional ? clinicLine(professional) : "—"],
-    ["Reference", appointment.reference],
+    ["Reference", appointment.bookingReference],
   ];
 
   return (
@@ -104,13 +104,13 @@ export default async function AppointmentDetailPage({
           {canCancel(appointment) ? (
             <div className="mt-4 flex flex-col gap-2.5">
               <Link
-                href={`/book/${appointment.professionalId}?reschedule=${appointment.reference}`}
+                href={`/book/${appointment.doctor.id}?reschedule=${appointment.bookingReference}`}
                 className={buttonClasses("outline", "md")}
               >
                 Reschedule
               </Link>
               <CancelAppointment
-                reference={appointment.reference}
+                reference={appointment.bookingReference}
                 professionalName={professional?.name ?? "this professional"}
               />
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -120,14 +120,14 @@ export default async function AppointmentDetailPage({
             </div>
           ) : (
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {appointment.status === "cancelled"
+              {appointment.status === "CANCELLED"
                 ? "This appointment was cancelled. Book again to arrange a new one."
                 : "This appointment has already taken place, so there is nothing left to change."}
             </p>
           )}
 
           <Link
-            href={`/professionals/${appointment.professionalId}`}
+            href={`/professionals/${appointment.doctor.id}`}
             className="mt-5 inline-block text-sm font-medium text-primary hover:underline"
           >
             View full profile

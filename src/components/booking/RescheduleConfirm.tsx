@@ -14,16 +14,18 @@ import {
 export default function RescheduleConfirm({
   reference,
   professionalId,
+  clinicId,
   date,
   time,
 }: {
   reference: string;
   professionalId: string;
+  clinicId: string;
   date: string;
   time: string;
 }) {
   const [state, formAction, isPending] = useActionState<MutationState>(
-    rescheduleAppointmentAction.bind(null, { reference, professionalId, date, time }),
+    rescheduleAppointmentAction.bind(null, { reference, professionalId, clinicId, date, time }),
     {},
   );
 
@@ -43,7 +45,7 @@ export default function RescheduleConfirm({
           {isPending ? "Moving…" : "Confirm new time"}
         </Button>
         <Link
-          href={`/book/${professionalId}?reschedule=${reference}`}
+          href={`/book/${professionalId}?clinic=${clinicId}&reschedule=${reference}`}
           className={buttonClasses("outline", "md")}
         >
           Choose a different time

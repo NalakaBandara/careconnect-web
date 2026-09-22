@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchProfessional } from "@/lib/professionals";
+import { fetchProfessional } from "@/lib/directory";
+import { fetchAppointmentByReference } from "@/lib/appointments";
 import AppointmentSummary from "@/components/booking/AppointmentSummary";
 import BookingSteps from "@/components/booking/BookingSteps";
 import { buttonClasses } from "@/components/Button";
-import { getSession, getSessionToken } from "@/lib/session";
-import { longDate } from "@/lib/date-format";
-import type { Appointment } from "@/types";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Appointment confirmed",
@@ -25,22 +24,11 @@ export default async function ConfirmedPage({
   if (!professional) notFound();
 
   const user = await getSession();
-  const token = await getSessionToken();
   const reference = typeof ref === "string" ? ref : "";
 
-  // The reference comes from the URL, so the appointment is looked up
-  // server-side and scoped to this user. Somebody else's reference finds
-  // nothing, rather than showing their appointment.
-  const response = await fetch(`${process.env.STUB_BASE_URL}/appointments`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  }).catch(() => null);
-
-  const body = response?.ok ? await response.json().catch(() => null) : null;
-  const appointment: Appointment | undefined = body?.appointments?.find(
-    (candidate: Appointment) => candidate.reference === reference,
-  );
-
+  // Looked up inside this user's own appointments, so somebody else's
+  // reference simply is not found rather than showing their booking.
+  const appointment = await fetchAppointmentByReference(reference);
   if (!appointment) notFound();
 
 
@@ -86,14 +74,14 @@ export default async function ConfirmedPage({
               Booking reference
             </p>
             <p className="mt-1 text-2xl font-semibold tracking-[0.25em]">
-              {appointment.reference}
+              {appointment.bookingReference}
             </p>
           </div>
 
           <div className="mt-5 text-left">
             <AppointmentSummary
               professional={professional}
-              longDate={longDate(appointment.date)}
+              longDate={appointment.longDate}
               time={appointment.time}
               durationMinutes={appointment.durationMinutes}
             />

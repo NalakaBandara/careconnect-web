@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchProfessional } from "@/lib/professionals";
 import AppointmentSummary from "@/components/booking/AppointmentSummary";
 import BookingDetailsForm from "@/components/booking/BookingDetailsForm";
 import BookingSteps from "@/components/booking/BookingSteps";
-import SlotPicker from "@/components/booking/SlotPicker";
 import RescheduleConfirm from "@/components/booking/RescheduleConfirm";
-import { fetchAppointment, canCancel } from "@/lib/appointments";
+import SlotPicker from "@/components/booking/SlotPicker";
+import { canCancel, fetchAppointmentByReference } from "@/lib/appointments";
+import { fetchAvailability, findDay, firstBookableDay, resolveFreeSlot } from "@/lib/booking";
+import { fetchProfessional, fetchServices } from "@/lib/directory";
 import { bookingAction } from "./actions";
-import { firstBookableDay, findDay, resolveFreeSlot, SLOT_DURATION_MINUTES } from "@/lib/slots";
-import { fetchSlotDays } from "@/lib/professionals";
-import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export const metadata: Metadata = {
   title: "Book an appointment",
@@ -23,30 +21,57 @@ export default async function BookPage({
   searchParams,
 }: PageProps<"/book/[professionalId]">) {
   const { professionalId } = await params;
-  const { date, time, reschedule } = await searchParams;
+  const { date, time, clinic, service, reschedule } = await searchParams;
 
-  const professional = await fetchProfessional(professionalId);
+  const [professional, services] = await Promise.all([
+    fetchProfessional(professionalId),
+    fetchServices(),
+  ]);
   if (!professional) notFound();
 
-  // Reschedule mode. The reference is looked up server-side and scoped to this
-  // user, so a reference belonging to someone else finds nothing and the page
-  // falls back to being an ordinary new booking.
+  // A doctor can work at several clinics, and availability is per clinic, so
+  // one has to be chosen before any times can be shown.
+  const clinicId =
+    (typeof clinic === "string" ? clinic : undefined) ?? professional.clinics[0]?.id;
+
+  if (!clinicId) {
+    return (
+      <main id="main" className="container-page py-14">
+        <h1 className="font-serif text-2xl font-semibold">Booking is not available</h1>
+        <p className="mt-3 max-w-prose text-muted-foreground">
+          {professional.name} is not currently listed at any clinic, so there is nowhere to book
+          an appointment.
+        </p>
+        <Link
+          href="/professionals"
+          className="mt-6 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          Back to the directory
+        </Link>
+      </main>
+    );
+  }
+
+  const serviceId = (typeof service === "string" ? service : undefined) ?? services[0]?.id;
+
+  // Reschedule mode. The reference is looked up inside this user's own
+  // appointments, so somebody else's is simply not found and the page falls
+  // back to being an ordinary new booking.
   const ref = typeof reschedule === "string" ? reschedule : undefined;
-  const moving = ref ? await fetchAppointment(ref) : null;
-  const isMoving = Boolean(moving && canCancel(moving) && moving.professionalId === professionalId);
+  const moving = ref ? await fetchAppointmentByReference(ref) : null;
+  const isMoving = Boolean(moving && canCancel(moving) && moving.doctor.id === professionalId);
 
-  // Fetched, not generated: these days already have other patients' bookings
-  // marked as taken, so two people cannot be shown the same free slot.
-  const days = await fetchSlotDays(professionalId);
+  const days = await fetchAvailability(professionalId, clinicId);
 
-  // Step 2 only if BOTH a date and a time are in the URL, and the pair is a
-  // real free slot. Anything else falls back to step 1 rather than trusting it.
   const chosenDate = typeof date === "string" ? date : undefined;
   const chosenTime = typeof time === "string" ? time : undefined;
-  const confirmedDay =
+  const confirmed =
     chosenDate && chosenTime ? resolveFreeSlot(days, chosenDate, chosenTime) : null;
 
-  if (confirmedDay && chosenTime) {
+  const activeClinic = professional.clinics.find((c) => c.id === clinicId);
+  const activeService = services.find((s) => s.id === serviceId);
+
+  if (confirmed && chosenTime && serviceId) {
     return (
       <main id="main">
         <Hero step={2} professionalName={professional.name} moving={isMoving} />
@@ -57,35 +82,42 @@ export default async function BookPage({
               <>
                 <h2 className="font-serif text-xl font-semibold">Confirm the new time</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  {moving.reference} will move from {moving.longDate} at {moving.time} to{" "}
-                  {confirmedDay.longDate} at {chosenTime}. Your contact details and the reason
-                  for the visit stay as they are.
+                  {moving.bookingReference} will move from {moving.longDate} at {moving.time} to{" "}
+                  {confirmed.day.longDate} at {chosenTime}. The reason for the visit stays as it
+                  is.
                 </p>
                 <div className="mt-6">
                   <RescheduleConfirm
-                    reference={moving.reference}
+                    reference={moving.bookingReference}
                     professionalId={professionalId}
-                    date={confirmedDay.date}
+                    clinicId={clinicId}
+                    date={confirmed.day.date}
                     time={chosenTime}
                   />
                 </div>
               </>
             ) : (
               <>
-            <h2 className="font-serif text-xl font-semibold">Your details</h2>
-            <div className="mt-6">
-              <BookingDetailsForm
-                // bind() fixes the slot on the server. The form posts only the
-                // fields the user typed.
-                action={bookingAction.bind(null, {
-                  professionalId,
-                  date: confirmedDay.date,
-                  time: chosenTime,
-                })}
-                professionalId={professionalId}
-                date={confirmedDay.date}
-              />
-            </div>
+                <h2 className="font-serif text-xl font-semibold">Your details</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Your name and contact details come from your account, so there is nothing to
+                  retype.
+                </p>
+                <div className="mt-6">
+                  <BookingDetailsForm
+                    // bind() fixes the slot on the server, so the form posts
+                    // only what the user typed.
+                    action={bookingAction.bind(null, {
+                      professionalId,
+                      clinicId,
+                      serviceId,
+                      date: confirmed.day.date,
+                      time: chosenTime,
+                    })}
+                    professionalId={professionalId}
+                    date={confirmed.day.date}
+                  />
+                </div>
               </>
             )}
           </div>
@@ -93,9 +125,11 @@ export default async function BookPage({
           <AppointmentSummary
             title="Appointment summary"
             professional={professional}
-            longDate={confirmedDay.longDate}
+            longDate={confirmed.day.longDate}
             time={chosenTime}
-            durationMinutes={SLOT_DURATION_MINUTES}
+            durationMinutes={activeService?.durationMinutes ?? 30}
+            clinicName={activeClinic?.name}
+            serviceName={activeService?.name}
           />
         </div>
       </main>
@@ -103,10 +137,9 @@ export default async function BookPage({
   }
 
   // Step 1. An unknown or full date in the URL quietly falls back to the first
-  // day that has space, rather than showing an empty grid.
+  // day with space, rather than showing an empty grid.
   const requested = chosenDate ? findDay(days, chosenDate) : undefined;
-  const selectedDay =
-    requested && requested.freeCount > 0 ? requested : firstBookableDay(days);
+  const selectedDay = requested && requested.freeCount > 0 ? requested : firstBookableDay(days);
 
   return (
     <main id="main">
@@ -117,19 +150,49 @@ export default async function BookPage({
           professionalId={professionalId}
           days={days}
           selectedDay={selectedDay}
+          clinicId={clinicId}
           reschedule={isMoving ? ref : undefined}
         />
 
         <div className="h-fit rounded-lg border border-border bg-background p-6 shadow-soft">
           <h2 className="text-lg font-semibold">{professional.name}</h2>
-          <p className="mt-1 text-sm text-primary">{primarySpeciality(professional)}</p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {clinicLine(professional)}
-          </p>
-          <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
-            Appointments are {SLOT_DURATION_MINUTES} minutes. The clinic confirms the exact time
-            once your request is received.
-          </p>
+          {activeClinic && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {activeClinic.name}
+              {activeClinic.city ? `, ${activeClinic.city}` : ""}
+            </p>
+          )}
+
+          {/* Only worth showing when there is actually a choice to make. */}
+          {professional.clinics.length > 1 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Also practises at
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                {professional.clinics
+                  .filter((c) => c.id !== clinicId)
+                  .map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={`/book/${professionalId}?clinic=${c.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {c.name}
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+
+          {activeService && (
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+              {activeService.name} appointments are {activeService.durationMinutes} minutes. The
+              clinic confirms the time once your request is received.
+            </p>
+          )}
+
           <Link
             href={`/professionals/${professionalId}`}
             className="mt-5 inline-block text-sm font-medium text-primary hover:underline"

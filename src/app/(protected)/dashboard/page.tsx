@@ -37,7 +37,7 @@ export default async function DashboardPage() {
 
   const { upcoming } = splitAppointments(await fetchAppointments());
   const next = upcoming[0]; // the list arrives sorted, soonest first
-  const nextProfessional = next ? await fetchProfessional(next.professionalId) : null;
+  const nextProfessional = next ? await fetchProfessional(next.doctor.id) : null;
 
   return (
     <div>
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
           </div>
 
           <Link
-            href={`/dashboard/appointments/${next.reference}`}
+            href={`/dashboard/appointments/${next.bookingReference}`}
             className={`${buttonClasses("primary", "sm")} mt-5`}
           >
             View details

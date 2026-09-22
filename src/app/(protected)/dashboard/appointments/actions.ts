@@ -2,87 +2,77 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getSession, getSessionToken } from "@/lib/session";
-import { resolveFreeSlot } from "@/lib/slots";
-import { fetchSlotDays } from "@/lib/professionals";
+import {
+  cancelAppointment,
+  fetchAppointmentByReference,
+  moveAppointment,
+} from "@/lib/appointments";
+import { fetchAvailability, resolveFreeSlot } from "@/lib/booking";
+import { getSession } from "@/lib/session";
 
 export type MutationState = { message?: string };
 
-async function patchAppointment(reference: string, body: Record<string, string>) {
-  const token = await getSessionToken();
+// A Server Action is a public endpoint. It can be invoked without the page
+// ever being loaded, so the session is checked here as well as in the layout.
+async function requireUser() {
+  const user = await getSession();
+  if (!user) redirect("/login");
+}
 
-  return fetch(`${process.env.STUB_BASE_URL}/appointments/${encodeURIComponent(reference)}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+// The lists are fetched with cache: "no-store", so the server is never stale.
+// But Next also keeps a client-side Router Cache of pages already visited, and
+// that would happily show the old list after a change.
+function revalidateAppointments(reference?: string) {
+  revalidatePath("/dashboard/appointments");
+  revalidatePath("/dashboard");
+  if (reference) revalidatePath(`/dashboard/appointments/${reference}`);
 }
 
 export async function cancelAppointmentAction(
   reference: string,
   _prev: MutationState,
 ): Promise<MutationState> {
-  // A Server Action is a public endpoint. It can be called without ever
-  // loading the page, so the session is checked here too.
-  const user = await getSession();
-  if (!user) redirect("/login");
+  await requireUser();
 
-  let response: Response;
-  try {
-    response = await patchAppointment(reference, { status: "cancelled" });
-  } catch {
-    return { message: "Could not reach the server. Please try again." };
-  }
+  // Looked up in the caller's own appointments, so a reference belonging to
+  // somebody else is simply not found.
+  const appointment = await fetchAppointmentByReference(reference);
+  if (!appointment) return { message: "That appointment could not be found." };
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    return {
-      message: body?.error?.message ?? "The appointment could not be cancelled.",
-    };
-  }
+  const ok = await cancelAppointment(appointment.id);
+  if (!ok) return { message: "The appointment could not be cancelled. Please try again." };
 
-  // The list is rendered from a no-store fetch, but the route itself can still
-  // be held in the client-side Router Cache. This tells Next that anything
-  // under /appointments is now stale.
-  revalidatePath("/dashboard/appointments");
+  revalidateAppointments(reference);
   return {};
 }
 
 export async function rescheduleAppointmentAction(
-  input: { reference: string; professionalId: string; date: string; time: string },
+  input: { reference: string; professionalId: string; clinicId: string; date: string; time: string },
   _prev: MutationState,
 ): Promise<MutationState> {
-  const user = await getSession();
-  if (!user) redirect("/login");
+  await requireUser();
+
+  const appointment = await fetchAppointmentByReference(input.reference);
+  if (!appointment) return { message: "That appointment could not be found." };
 
   // Re-check the slot. The page showed it as free, but that was some time ago.
-  const days = await fetchSlotDays(input.professionalId);
-  if (!resolveFreeSlot(days, input.date, input.time)) {
+  const days = await fetchAvailability(input.professionalId, input.clinicId);
+  const found = resolveFreeSlot(days, input.date, input.time);
+
+  if (!found?.slot.scheduleId || !found.slot.endTime) {
     return { message: "That time is no longer available. Please choose another." };
   }
 
-  let response: Response;
-  try {
-    response = await patchAppointment(input.reference, {
-      date: input.date,
-      time: input.time,
-    });
-  } catch {
-    return { message: "Could not reach the server. Please try again." };
-  }
+  const ok = await moveAppointment(appointment.id, {
+    appointmentDate: input.date,
+    startTime: `${input.time}:00`,
+    endTime: `${found.slot.endTime}:00`,
+    doctorScheduleId: found.slot.scheduleId,
+  });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    return {
-      message: body?.error?.message ?? "The appointment could not be moved.",
-    };
-  }
+  if (!ok) return { message: "The appointment could not be moved. Please try again." };
 
-  revalidatePath("/dashboard/appointments");
+  revalidateAppointments(input.reference);
 
   // Outside any try/catch - redirect() signals by throwing.
   redirect(`/dashboard/appointments/${input.reference}?moved=1`);
