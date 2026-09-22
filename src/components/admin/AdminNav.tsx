@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Managing doctors is being rebuilt against the API, where an admin promotes
-// an existing user rather than creating a professional from nothing. The link
-// comes back with those pages; a link to a route that does not exist is worse
-// than no link.
-const ITEMS = [{ label: "Overview", href: "/admin" as const }];
+const ITEMS = [
+  { label: "Overview", href: "/admin" as const },
+  { label: "Clinics", href: "/admin/clinics" as const },
+];
 
 export default function AdminNav() {
   const pathname = usePathname();
