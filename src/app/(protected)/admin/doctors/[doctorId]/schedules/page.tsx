@@ -6,6 +6,7 @@ import { fetchAdminClinics } from "@/lib/admin";
 import { fetchSchedules } from "@/lib/booking";
 import { fetchProfessional } from "@/lib/directory";
 import { createScheduleAction } from "../../actions";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Working hours", robots: { index: false } };
 
@@ -15,6 +16,10 @@ export default async function SchedulesPage({
   params,
   searchParams,
 }: PageProps<"/admin/doctors/[doctorId]/schedules">) {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   const { doctorId } = await params;
   const { added } = await searchParams;
 

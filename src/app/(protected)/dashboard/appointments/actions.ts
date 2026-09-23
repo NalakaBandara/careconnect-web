@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  canCancel,
   cancelAppointment,
   fetchAppointmentByReference,
   moveAppointment,
@@ -39,6 +40,19 @@ export async function cancelAppointmentAction(
   const appointment = await fetchAppointmentByReference(reference);
   if (!appointment) return { message: "That appointment could not be found." };
 
+  // The UI hides the Cancel button once an appointment is in the past or
+  // already cancelled, but hiding a button is not a rule. This action is its
+  // own public endpoint and can be called directly, and the API accepts a
+  // repeat cancellation and a past one with a 200, so the rule has to live
+  // here.
+  if (!canCancel(appointment)) {
+    return {
+      message: appointment.status === "CANCELLED"
+        ? "That appointment was already cancelled."
+        : "That appointment has already taken place, so there is nothing to cancel.",
+    };
+  }
+
   const ok = await cancelAppointment(appointment.id);
   if (!ok) return { message: "The appointment could not be cancelled. Please try again." };
 
@@ -54,6 +68,17 @@ export async function rescheduleAppointmentAction(
 
   const appointment = await fetchAppointmentByReference(input.reference);
   if (!appointment) return { message: "That appointment could not be found." };
+
+  // Same rule as cancelling, and for the same reason. Moving an appointment
+  // that has already happened, or one somebody cancelled, would quietly bring
+  // a dead booking back to life.
+  if (!canCancel(appointment)) {
+    return {
+      message: appointment.status === "CANCELLED"
+        ? "That appointment was cancelled, so it cannot be moved. Please book a new one."
+        : "That appointment has already taken place, so it cannot be moved.",
+    };
+  }
 
   // Re-check the slot. The page showed it as free, but that was some time ago.
   // One request, for the one day in question. Re-checking the whole

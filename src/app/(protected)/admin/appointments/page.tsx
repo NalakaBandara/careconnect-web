@@ -4,6 +4,7 @@ import StatusBadge from "@/components/appointments/StatusBadge";
 import { fetchAllAppointments } from "@/lib/admin";
 import { longDate, todayIso } from "@/lib/date-format";
 import type { AppointmentStatus } from "@/types";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Appointments", robots: { index: false } };
 
@@ -12,6 +13,10 @@ const ACTIVE: AppointmentStatus[] = ["PENDING", "CONFIRMED"];
 export default async function AdminAppointmentsPage({
   searchParams,
 }: PageProps<"/admin/appointments">) {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   const { tab } = await searchParams;
   const showPast = tab === "past";
 

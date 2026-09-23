@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+import { requireAdmin } from "@/lib/guards";
 import { z } from "zod";
 import {
   addDoctorClinic,
@@ -13,19 +15,12 @@ import {
   updateDoctor,
 } from "@/lib/admin";
 import { fetchProfessional } from "@/lib/directory";
-import { getSession, isAdmin } from "@/lib/session";
 
 export type DoctorFormState = {
   message?: string;
   fields?: Record<string, string[]>;
   values?: Record<string, string>;
 };
-
-async function requireAdmin() {
-  const user = await getSession();
-  if (!user) redirect("/login");
-  if (!isAdmin(user)) redirect("/forbidden");
-}
 
 // A doctor shows in the directory, on their own profile and on the home page.
 function revalidateEverywhere(id?: string) {

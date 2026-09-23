@@ -3,6 +3,7 @@ import Link from "next/link";
 import DeleteClinic from "@/components/admin/DeleteClinic";
 import { buttonClasses } from "@/components/Button";
 import { fetchAdminClinics } from "@/lib/admin";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Clinics", robots: { index: false } };
 
@@ -13,6 +14,10 @@ const NOTICES: Record<string, string> = {
 };
 
 export default async function AdminClinicsPage({ searchParams }: PageProps<"/admin/clinics">) {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   const params = await searchParams;
   const clinics = await fetchAdminClinics();
 

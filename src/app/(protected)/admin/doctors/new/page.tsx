@@ -4,10 +4,15 @@ import PromoteDoctorForm from "@/components/admin/PromoteDoctorForm";
 import { fetchAdminClinics, fetchAdminSpecialities, fetchUsers } from "@/lib/admin";
 import { fetchProfessionals } from "@/lib/directory";
 import { promoteDoctorAction } from "../actions";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Add a doctor", robots: { index: false } };
 
 export default async function NewDoctorPage() {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   // Four independent reads, so they run together rather than in sequence.
   const [users, clinics, specialities, doctors] = await Promise.all([
     fetchUsers(),

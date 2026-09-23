@@ -6,12 +6,17 @@ import LinkToggle from "@/components/admin/LinkToggle";
 import { fetchAdminClinics, fetchAdminSpecialities } from "@/lib/admin";
 import { fetchProfessional } from "@/lib/directory";
 import { linkClinicAction, linkSpecialityAction, updateDoctorAction } from "../../actions";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Edit doctor", robots: { index: false } };
 
 export default async function EditDoctorPage({
   params,
 }: PageProps<"/admin/doctors/[doctorId]/edit">) {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   const { doctorId } = await params;
 
   const [doctor, clinics, specialities] = await Promise.all([

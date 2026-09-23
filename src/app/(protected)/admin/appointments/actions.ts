@@ -1,17 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+
+import { requireAdmin } from "@/lib/guards";
 import { checkInAppointment, setAppointmentStatus } from "@/lib/admin";
-import { getSession, isAdmin } from "@/lib/session";
 
 export type StatusState = { message?: string };
-
-async function requireAdmin() {
-  const user = await getSession();
-  if (!user) redirect("/login");
-  if (!isAdmin(user)) redirect("/forbidden");
-}
 
 // Changing an appointment's status is visible to the patient who booked it,
 // so their pages are stale too, not only the admin list.

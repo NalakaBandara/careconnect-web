@@ -4,12 +4,17 @@ import { notFound } from "next/navigation";
 import LinkToggle from "@/components/admin/LinkToggle";
 import { fetchAdminClinics, fetchAdminServices, fetchClinicServices } from "@/lib/admin";
 import { linkServiceAction } from "../../actions";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Clinic services", robots: { index: false } };
 
 export default async function ClinicServicesPage({
   params,
 }: PageProps<"/admin/clinics/[clinicId]/services">) {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   const { clinicId } = await params;
 
   const [clinics, allServices, offered] = await Promise.all([

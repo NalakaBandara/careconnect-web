@@ -5,7 +5,7 @@ import StatusBadge from "@/components/appointments/StatusBadge";
 import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
 import { fetchAppointments, splitAppointments } from "@/lib/appointments";
-import { getSession } from "@/lib/session";
+import { requireUser } from "@/lib/guards";
 import { clinicLine, primarySpeciality } from "@/lib/professional-format";
 
 export const metadata: Metadata = {
@@ -32,8 +32,9 @@ const QUICK_ACTIONS = [
 ];
 
 export default async function DashboardPage() {
-  // Safe to assert: the layout above already redirected anyone without a session.
-  const user = (await getSession())!;
+  // Checked here, not inferred from the layout. A page is reachable on its own,
+  // and the guard returns the user so there is nothing to assert about.
+  const user = await requireUser();
 
   const { upcoming } = splitAppointments(await fetchAppointments());
   const next = upcoming[0]; // the list arrives sorted, soonest first

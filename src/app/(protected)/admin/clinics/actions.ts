@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+import { requireAdmin } from "@/lib/guards";
 import { z } from "zod";
 import {
   addClinicService,
@@ -11,7 +13,6 @@ import {
   updateClinic,
   type ClinicInput,
 } from "@/lib/admin";
-import { getSession, isAdmin } from "@/lib/session";
 
 export type ClinicFormState = {
   message?: string;
@@ -34,14 +35,6 @@ const FIELDS = ["name", "addressLine1", "city", "telephone", "email", "descripti
 
 function readForm(formData: FormData): Record<string, string> {
   return Object.fromEntries(FIELDS.map((f) => [f, String(formData.get(f) ?? "")]));
-}
-
-// Every admin page is gated by its layout, but a Server Action is its own
-// public endpoint: it can be invoked without the page ever being loaded.
-async function requireAdmin() {
-  const user = await getSession();
-  if (!user) redirect("/login");
-  if (!isAdmin(user)) redirect("/forbidden");
 }
 
 // A clinic appears in the public directory, in the location filter and on

@@ -4,12 +4,17 @@ import { notFound } from "next/navigation";
 import ServiceForm from "@/components/admin/ServiceForm";
 import { fetchAdminServices } from "@/lib/admin";
 import { updateServiceAction } from "../../actions";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Edit service", robots: { index: false } };
 
 export default async function EditServicePage({
   params,
 }: PageProps<"/admin/services/[serviceId]/edit">) {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   const { serviceId } = await params;
 
   // The API has no single-service endpoint, so the one being edited is picked

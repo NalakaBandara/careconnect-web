@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { decodeJwt, jwtVerify, type JWTPayload } from "jose";
 
@@ -58,7 +59,11 @@ function toUser(payload: JWTPayload): SessionUser {
 // what to SHOW, never what data to hand over. Every piece of real data comes
 // from the API, which checks the signature itself and rejects anything forged.
 // So the worst a faked cookie achieves is an admin menu with nothing behind it.
-export async function getSession(): Promise<SessionUser | null> {
+//
+// Wrapped in React's cache(), so it runs once per request no matter how many
+// times it is asked. The proxy, the layout, the page and any action all want to
+// know who this is, and without this each one would verify the token again.
+export const getSession = cache(async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
@@ -88,7 +93,7 @@ export async function getSession(): Promise<SessionUser | null> {
   } catch {
     return null; // not a readable token at all
   }
-}
+})
 
 export function hasRole(user: SessionUser | null, role: Role) {
   return user?.roles.includes(role) ?? false;

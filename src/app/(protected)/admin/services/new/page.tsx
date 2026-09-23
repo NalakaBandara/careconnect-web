@@ -2,10 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ServiceForm from "@/components/admin/ServiceForm";
 import { createServiceAction } from "../actions";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = { title: "Add a service", robots: { index: false } };
 
-export default function NewServicePage() {
+export default async function NewServicePage() {
+  // Checked here as well as in the layout. The Next docs are explicit that a
+  // layout is not an authorisation boundary: it is not guaranteed to re-run for
+  // every navigation into the routes beneath it.
+  await requireAdmin();
   return (
     <div>
       <Link href="/admin/services" className="text-sm text-muted-foreground hover:text-foreground">

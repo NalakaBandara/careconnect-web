@@ -4,7 +4,7 @@ import { buttonClasses } from "@/components/Button";
 import { fetchAdminClinics, fetchAllAppointments, fetchUsers } from "@/lib/admin";
 import { fetchProfessionals, fetchServices } from "@/lib/directory";
 import { todayIso } from "@/lib/date-format";
-import { getSession } from "@/lib/session";
+import { requireAdmin } from "@/lib/guards";
 
 export const metadata: Metadata = {
   title: "Administration",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   // Safe to assert: admin/layout.tsx has already turned away anyone without
   // the admin role.
-  const user = (await getSession())!;
+  const user = await requireAdmin();
 
   // Five independent reads, so they run together rather than in sequence.
   const [doctors, clinics, services, appointments, users] = await Promise.all([

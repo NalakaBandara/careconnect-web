@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+import { requireAdmin } from "@/lib/guards";
 import { z } from "zod";
 import { createService, retireService, updateService, type ServiceInput } from "@/lib/admin";
-import { getSession, isAdmin } from "@/lib/session";
 
 export type ServiceFormState = {
   message?: string;
@@ -27,12 +28,6 @@ const FIELDS = ["name", "description", "durationMinutes"] as const;
 
 function readForm(formData: FormData): Record<string, string> {
   return Object.fromEntries(FIELDS.map((f) => [f, String(formData.get(f) ?? "")]));
-}
-
-async function requireAdmin() {
-  const user = await getSession();
-  if (!user) redirect("/login");
-  if (!isAdmin(user)) redirect("/forbidden");
 }
 
 // A service is offered on the public services page and chosen when booking,
