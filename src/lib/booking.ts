@@ -109,24 +109,11 @@ export async function fetchAvailability(
   clinicId: string,
   dayCount = 14,
 ): Promise<SlotDay[]> {
-  const schedules = (await fetchSchedules(doctorId)).filter(
-    (schedule) => schedule.clinicId === clinicId,
-  );
-
+  const schedules = await clinicSchedules(doctorId, clinicId);
   if (schedules.length === 0) return [];
 
   const today = new Date().toISOString().slice(0, 10);
   const dates = Array.from({ length: dayCount }, (_, i) => addDays(today, i));
-
-  // Which schedule covers a given time, so a booking can name it. A doctor can
-  // have a morning and an evening schedule on the same day.
-  const scheduleFinder = (date: string) => (time: string) =>
-    schedules.find(
-      (schedule) =>
-        schedule.dayOfWeek === weekdayOf(date) &&
-        time >= schedule.startTime &&
-        time < schedule.endTime,
-    )?.id;
 
   const working = dates.filter((date) =>
     schedules.some((schedule) => schedule.dayOfWeek === weekdayOf(date)),
@@ -134,43 +121,77 @@ export async function fetchAvailability(
 
   // In parallel: each day is an independent request, so doing them in sequence
   // would make the page wait for the sum rather than the slowest.
-  const results = await Promise.all(
-    working.map(async (date) => {
-      const body = await get<{ slots: ApiSlot[] }>(
-        `/doctors/${encodeURIComponent(doctorId)}/available-slots?clinicId=${encodeURIComponent(
-          clinicId,
-        )}&date=${date}`,
-      );
+  return Promise.all(working.map((date) => fetchDay(doctorId, clinicId, date, schedules)));
+}
 
-      const common = {
-        date,
-        weekday: shortWeekday(date),
-        dayMonth: shortDate(date),
-        longDate: longDate(date),
-      };
+/**
+ * One day only.
+ *
+ * This exists because verifying a single slot used to re-fetch the whole
+ * fortnight: one request per working day, to answer a question about one time
+ * on one date. With a 30-a-minute budget that meant booking a slot could spend
+ * seven requests proving it was free and then be refused for running out.
+ */
+export async function fetchDayAvailability(
+  doctorId: string,
+  clinicId: string,
+  date: string,
+): Promise<SlotDay | null> {
+  const schedules = await clinicSchedules(doctorId, clinicId);
+  if (!schedules.some((schedule) => schedule.dayOfWeek === weekdayOf(date))) return null;
 
-      // No answer at all. Falling back to an empty list here would render the
-      // day as "Full", which is a different claim entirely and one we cannot
-      // support. The API rate limits reads to 30 a minute and this page makes
-      // one request per working day, so a failure is realistic, not theoretical.
-      if (body === null) {
-        return { ...common, freeCount: 0, groups: [], unknown: true } satisfies SlotDay;
-      }
+  return fetchDay(doctorId, clinicId, date, schedules);
+}
 
-      const groups = groupSlots(body.slots ?? [], scheduleFinder(date));
+async function clinicSchedules(doctorId: string, clinicId: string) {
+  return (await fetchSchedules(doctorId)).filter((schedule) => schedule.clinicId === clinicId);
+}
 
-      return {
-        ...common,
-        freeCount: groups.reduce(
-          (total, group) => total + group.slots.filter((slot) => !slot.taken).length,
-          0,
-        ),
-        groups,
-      } satisfies SlotDay;
-    }),
+async function fetchDay(
+  doctorId: string,
+  clinicId: string,
+  date: string,
+  schedules: DoctorSchedule[],
+): Promise<SlotDay> {
+  // Which schedule covers a given time, so a booking can name it. A doctor can
+  // have a morning and an evening schedule on the same day.
+  const scheduleFor = (time: string) =>
+    schedules.find(
+      (schedule) =>
+        schedule.dayOfWeek === weekdayOf(date) &&
+        time >= schedule.startTime &&
+        time < schedule.endTime,
+    )?.id;
+
+  const body = await get<{ slots: ApiSlot[] }>(
+    `/doctors/${encodeURIComponent(doctorId)}/available-slots?clinicId=${encodeURIComponent(
+      clinicId,
+    )}&date=${date}`,
   );
 
-  return results;
+  const common = {
+    date,
+    weekday: shortWeekday(date),
+    dayMonth: shortDate(date),
+    longDate: longDate(date),
+  };
+
+  // No answer at all. Falling back to an empty list here would render the day
+  // as "Full", which is a different claim entirely and one we cannot support.
+  if (body === null) {
+    return { ...common, freeCount: 0, groups: [], unknown: true } satisfies SlotDay;
+  }
+
+  const groups = groupSlots(body.slots ?? [], scheduleFor);
+
+  return {
+    ...common,
+    freeCount: groups.reduce(
+      (total, group) => total + group.slots.filter((slot) => !slot.taken).length,
+      0,
+    ),
+    groups,
+  } satisfies SlotDay;
 }
 
 export function findDay(days: SlotDay[], date: string): SlotDay | undefined {
@@ -184,6 +205,31 @@ export function firstBookableDay(days: SlotDay[]): SlotDay | undefined {
 /** Did any day fail to load? The page says so rather than implying a full diary. */
 export function hasUnknownDays(days: SlotDay[]): boolean {
   return days.some((day) => day.unknown);
+}
+
+/**
+ * The same check as resolveFreeSlot, but it says WHY when the answer is no.
+ *
+ * Both the booking and the reschedule actions re-check the slot before writing,
+ * because the form may have sat open for a while. They used to treat every
+ * negative answer as "somebody took it", so a re-check that could not reach the
+ * API told the patient their slot was gone and sent them to pick another one
+ * that would fail the same way. The API allows 30 requests a minute and a
+ * re-check costs one per working day, so this is easy to hit.
+ */
+export type SlotCheck =
+  | { status: "free"; scheduleId: string; endTime: string }
+  | { status: "taken" }
+  | { status: "unknown" };
+
+export function checkSlot(day: SlotDay | null, time: string): SlotCheck {
+  // Nothing known about the day at all, or the request for it failed.
+  if (!day || day.unknown) return { status: "unknown" };
+
+  const slot = day.groups.flatMap((group) => group.slots).find((s) => s.time === time);
+  if (!slot || slot.taken || !slot.scheduleId || !slot.endTime) return { status: "taken" };
+
+  return { status: "free", scheduleId: slot.scheduleId, endTime: slot.endTime };
 }
 
 /**

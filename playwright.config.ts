@@ -25,6 +25,13 @@ export default defineConfig({
   // Stops a stray .only committed by accident from silently skipping the suite.
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
+  // Capped. The API allows 30 requests a minute per IP, and the booking page
+  // alone makes about ten of them, because availability is one request per
+  // working day. Eight workers loading pages at once spent that budget in
+  // seconds and the tests then reported empty results and full diaries, which
+  // looked like application bugs. The real fix is a single availability request
+  // covering a date range; until the API offers one, the suite paces itself.
+  workers: 3,
   reporter: process.env.CI ? "github" : "list",
 
   use: {

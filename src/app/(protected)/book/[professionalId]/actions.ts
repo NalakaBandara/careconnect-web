@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createAppointment } from "@/lib/appointments";
-import { fetchAvailability, resolveFreeSlot } from "@/lib/booking";
+import { checkSlot, fetchDayAvailability } from "@/lib/booking";
 import { getSession } from "@/lib/session";
 
 export type BookingState = {
@@ -54,10 +54,23 @@ export async function bookingAction(
 
   // Re-check the slot against the API. The page rendered it as free, but a
   // form can sit open a long while before anybody presses the button.
-  const days = await fetchAvailability(slot.professionalId, slot.clinicId);
-  const found = resolveFreeSlot(days, slot.date, slot.time);
+  // One request, for the one day in question. Re-checking the whole
+  // fortnight to verify a single time wasted the request budget that the
+  // booking itself then needed.
+  const day = await fetchDayAvailability(slot.professionalId, slot.clinicId, slot.date);
+  const check = checkSlot(day, slot.time);
 
-  if (!found?.slot.scheduleId || !found.slot.endTime) {
+  if (check.status === "unknown") {
+    // The re-check did not get an answer. Saying the slot is gone would send
+    // this person off to choose another time for no reason, and the next one
+    // would fail identically.
+    return {
+      message: "We could not confirm that time just now. Please try again in a moment.",
+      values,
+    };
+  }
+
+  if (check.status === "taken") {
     return {
       message: "That appointment time is no longer available. Please choose another.",
       values,
@@ -68,10 +81,10 @@ export async function bookingAction(
     doctorProfileId: slot.professionalId,
     clinicId: slot.clinicId,
     serviceId: slot.serviceId,
-    doctorScheduleId: found.slot.scheduleId,
+    doctorScheduleId: check.scheduleId,
     appointmentDate: slot.date,
     startTime: `${slot.time}:00`,
-    endTime: `${found.slot.endTime}:00`,
+    endTime: `${check.endTime}:00`,
     reason: values.reason.trim(),
   });
 

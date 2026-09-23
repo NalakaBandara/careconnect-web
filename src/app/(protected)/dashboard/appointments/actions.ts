@@ -7,7 +7,7 @@ import {
   fetchAppointmentByReference,
   moveAppointment,
 } from "@/lib/appointments";
-import { fetchAvailability, resolveFreeSlot } from "@/lib/booking";
+import { checkSlot, fetchDayAvailability } from "@/lib/booking";
 import { getSession } from "@/lib/session";
 
 export type MutationState = { message?: string };
@@ -56,18 +56,28 @@ export async function rescheduleAppointmentAction(
   if (!appointment) return { message: "That appointment could not be found." };
 
   // Re-check the slot. The page showed it as free, but that was some time ago.
-  const days = await fetchAvailability(input.professionalId, input.clinicId);
-  const found = resolveFreeSlot(days, input.date, input.time);
+  // One request, for the one day in question. Re-checking the whole
+  // fortnight to verify a single time wasted the request budget that the
+  // booking itself then needed.
+  const day = await fetchDayAvailability(input.professionalId, input.clinicId, input.date);
+  const check = checkSlot(day, input.time);
 
-  if (!found?.slot.scheduleId || !found.slot.endTime) {
+  if (check.status === "unknown") {
+    // Could not reach the API to check. That is not the same as the slot being
+    // taken, and telling them it is taken would move the appointment nowhere
+    // while implying somebody else got in first.
+    return { message: "We could not confirm that time just now. Please try again in a moment." };
+  }
+
+  if (check.status === "taken") {
     return { message: "That time is no longer available. Please choose another." };
   }
 
   const ok = await moveAppointment(appointment.id, {
     appointmentDate: input.date,
     startTime: `${input.time}:00`,
-    endTime: `${found.slot.endTime}:00`,
-    doctorScheduleId: found.slot.scheduleId,
+    endTime: `${check.endTime}:00`,
+    doctorScheduleId: check.scheduleId,
   });
 
   if (!ok) return { message: "The appointment could not be moved. Please try again." };

@@ -80,7 +80,11 @@ test.describe("booking and managing an appointment", () => {
   // Serial, not parallel. Each test books a real appointment, and two tests
   // racing for the same first free slot would leave one of them with a
   // conflict that is not a bug in the app.
-  test.describe.configure({ mode: "serial" });
+  //
+  // The longer timeout is for the API's rate limit: loading availability costs
+  // one request per working day, and when the minute's budget is gone the
+  // helper waits for it to come back rather than calling that a failure.
+  test.describe.configure({ mode: "serial", timeout: 150_000 });
 
   test("books the first free slot, sees it listed, then cancels it", async ({ page }) => {
     const reference = await bookFirstFreeSlot(page);
@@ -124,9 +128,15 @@ test.describe("booking and managing an appointment", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Confirm the new time" }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Confirm new time" }).click();
-
-    await page.waitForURL(/moved=1/);
+    // Retried, because confirming re-checks availability against the API and
+    // that can run into the 30-a-minute limit. The app now says "we could not
+    // confirm that time just now" rather than claiming the slot is taken, so
+    // pressing the button again after a pause is the right response.
+    await expect(async () => {
+      if (/moved=1/.test(page.url())) return;
+      await page.getByRole("button", { name: "Confirm new time" }).click();
+      await page.waitForURL(/moved=1/, { timeout: 20_000 });
+    }).toPass({ timeout: 100_000, intervals: [15_000, 25_000, 25_000] });
     await expect(page.getByText(/has been moved/i)).toBeVisible();
 
     // The reference deliberately does not change when an appointment moves:
