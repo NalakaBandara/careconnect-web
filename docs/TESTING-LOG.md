@@ -11,7 +11,7 @@ is given.
 
 ## Summary
 
-**18 defects found, 15 fixed, 3 open.** The three open ones are recorded with the reason
+**23 defects found, 20 fixed, 3 open.** The three open ones are recorded with the reason
 rather than dropped: one is emitted by React itself and one is a brand decision that also
 lives in the Figma file.
 
@@ -26,6 +26,9 @@ lives in the Figma file.
 | Unit and component tests | Vitest, 79 tests | 2 defects found and fixed |
 | Responsiveness | Playwright at phone, tablet and desktop widths | Passing, 41 tests |
 | End-to-end journeys | Playwright against the live API | 3 defects found and fixed |
+| Security review | Read of all 8,271 lines of src/, plus probes against the live API | 5 defects found and fixed |
+| Performance review | API request volume measured per page via the ratelimit header | 1 waterfall fixed, 1 ceiling found and reported |
+| Code quality review | Type safety, duplication, dead code, deprecated APIs | No `any` anywhere; 1 duplication and 3 unused exports removed |
 | Usability with real users | Not yet run | Pending |
 
 Automated totals: **79 unit and component tests** (`npm test`) and **74 end-to-end tests**
@@ -435,7 +438,154 @@ from failing every run to passing.
 
 ---
 
-## 8. Open, and waiting on the API
+## 8. Security, performance and code quality review
+
+**Method.** A read of the whole of `src/` (8,271 lines), plus probes against the live API to
+check what it actually enforces, plus measurement of API request volume per page using the
+API's own `ratelimit` response header.
+
+### Security
+
+| Finding | Severity | Status |
+|---|---|---|
+| DEF-019: no security headers were set at all | high | Fixed |
+| DEF-020: cancelling and rescheduling had no state check | high | Fixed |
+| DEF-021: `?next=` was set but never read, so login always went to the dashboard | medium | Fixed |
+| DEF-022: admin pages relied on the layout to gate them | medium | Fixed |
+| DEF-023: `requireAdmin` was copied into four action files | medium | Fixed |
+| Session token in an httpOnly, SameSite=Lax cookie, Secure in production | — | Correct |
+| Login does not say whether the email or the password was wrong | — | Correct |
+| Appointments are looked up inside the caller's own list, so another user's reference 404s | — | Correct |
+| No `dangerouslySetInnerHTML`, `innerHTML`, `eval` or `new Function` anywhere | — | Correct |
+| No secret behind `NEXT_PUBLIC_`; the only env vars are server-side | — | Correct |
+| Every Server Action checks permission itself, all 16 of them | — | Correct |
+| The doctor's licence number the API sends is never rendered to a patient | — | Correct |
+| Ids that a form submits are bound with `bind()`, not hidden inputs | — | Correct |
+
+### DEF-019: no security headers
+
+Nothing was set. Added: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+`Permissions-Policy`, a nonce-based `Content-Security-Policy`, and
+`Strict-Transport-Security` in production only.
+
+`Referrer-Policy` matters more here than it looks. Without it, a link out of the site carries
+the current path in the `Referer` header, and paths here look like
+`/dashboard/appointments/CC-4821-MEH`. That hands a booking reference to a third party.
+
+HSTS is production-only on purpose. Sent from `http://localhost` it pins the browser to HTTPS
+for localhost, which breaks every other project on port 3000 until the setting is cleared by
+hand.
+
+The CSP keeps `'unsafe-inline'` for styles. Two components set a style attribute whose value
+changes at runtime, the parallax transform and the filter's pending opacity, and a nonce cannot
+apply to an attribute. It is a much weaker vector than inline script, and with no `innerHTML`
+in the codebase there is no way to inject one.
+
+### DEF-020: cancelling and rescheduling had no state check
+
+Both actions confirmed the appointment belonged to the caller and then went ahead. The UI hides
+the buttons once an appointment is in the past or already cancelled, but hiding a button is not
+a rule, and a Server Action is a public endpoint reachable without the page.
+
+**Probed against the live API**, and it does not enforce it either:
+
+```
+DELETE /appointments/5   (already CANCELLED)           -> 200
+DELETE /appointments/4   (CONFIRMED, date in the past) -> 200
+```
+
+So a patient could cancel an appointment they had already attended. Now checked with
+`canCancel` in both actions, with a message saying which case it was.
+
+### DEF-021: ?next= was recorded and then ignored
+
+`proxy.ts` put the path a guest was refused into `?next=`, and `loginAction` always redirected
+to `/dashboard`. Nothing read the value. Being turned away from `/dashboard/appointments` and
+signing in left you on the dashboard.
+
+Implementing it meant handling the open redirect it would otherwise become. A link to
+`/login?next=https://evil.example/login` is a genuine CareConnect URL, with the right domain
+and padlock, that hands the user to a copy of the login page the moment they submit their
+password. `safeNext` in `lib/redirects.ts` allows only a path on this site, and rejects:
+
+- an absolute URL
+- `//evil.example`, which passes a naive "does it start with /" check and which the browser
+  reads as protocol-relative
+- the same trick written with a backslash, which some browsers treat as a slash
+- `/login` and `/register`, which would bounce the user straight back out and look like a
+  failed sign-in
+
+It is validated on the server, passed to the action with `bind()` rather than a hidden input,
+and validated again inside the action. 6 unit tests and 3 end-to-end tests, including both
+redirect attempts.
+
+### Performance
+
+**Measured, not assumed.** Two things I expected to be problems were not.
+
+| Expectation | Measurement |
+|---|---|
+| The appointments page fetches the doctor once per card, so 23 cards means 23 requests | **3 requests for 23 cards.** Next memoises identical `fetch` calls within one render, so the duplicates cost nothing |
+| The profile page fetches the doctor twice, once in `generateMetadata` and once in the page | **2 requests.** Same memoisation |
+| `/professionals` fetches `/clinics` twice | **3 requests, not 4.** Same again |
+
+The lesson is worth more than the finding: a pattern that looks like an N+1 in the source was
+not one at runtime, and the only way to know was to measure.
+
+**What is a real constraint.** The teammate has raised the general read limit from 30 requests
+a minute to 300. Availability still has its own limit of 30:
+
+```
+GET /clinics                   ratelimit-policy: 300;w=60
+GET /doctors/1/available-slots  ratelimit-policy: 30;w=60
+```
+
+Measured: **one `/book/1` page load spends 6 of those 30**, because availability is one request
+per working day. That is a hard ceiling of about **4 booking page views a minute across all
+users of the site**. It is the single most important thing left for the API to fix, and the
+date-range parameter is what fixes it.
+
+**Fixed here:** the confirmation page awaited three independent things one after another, so it
+waited for the sum of three round trips rather than the slowest.
+
+**A deliberate trade-off, not a defect.** Every route is dynamic, including `/about` and
+`/faqs`, because the header shows the signed-in user's email and so reads cookies. That is
+already recorded in a comment in `SiteHeader.tsx`. Without Partial Prerendering, which needs
+`cacheComponents`, a static shell around a dynamic header is not available, so the trade-off
+stands and it was judged correctly.
+
+### Code quality
+
+| Check | Result |
+|---|---|
+| `any`, `as any`, `@ts-ignore`, `@ts-expect-error` | **None.** |
+| Non-null assertions | Two, both on a security check. Removed: the guards return the user |
+| `console.log` in application code | One, in the contact stub, and it deliberately logs the subject but not the message body |
+| Duplicated logic | `requireAdmin` in four files, now one. `COOKIE_NAME` in two, left as is and noted below |
+| Unused exports | Three removed, one made private |
+| Raw `<img>` | None, everything goes through `next/image` |
+| Deprecated APIs | One, `<Image priority>`, now `preload` |
+
+### Left deliberately
+
+| Item | Why |
+|---|---|
+| `COOKIE_NAME` is declared in both `session.ts` and `proxy.ts` | The proxy cannot import from a `server-only` module. Extracting the constant alone is possible but adds a file for one string; the risk is low and both are commented |
+| `'unsafe-inline'` in `style-src` | Two runtime style attributes need it, and a nonce cannot apply to an attribute |
+| The contact form still posts to a local stub | The API has no contact endpoint |
+
+### Functional gaps found while reviewing
+
+Not defects in what exists, but admin screens the API already supports and the app does not:
+
+| Gap | Evidence |
+|---|---|
+| No way for an admin to grant or remove a role, so a second admin cannot be made through the UI | `fetchRoles` and `grantRole` exist in `lib/admin.ts` with no callers |
+| No way to add a speciality, so the doctor edit screen can only link ones that already exist | `createSpeciality` exists with no callers |
+
+---
+
+## 9. Open, and waiting on the API
 
 | Item | Detail | Last checked |
 |---|---|---|
@@ -467,7 +617,7 @@ system's only doctor with no way back, or promoting a spare account to doctor, w
 undone because there is no delete. Neither is a reasonable thing to do to a shared database to
 confirm somebody else's fix, so it has been passed back to be tested on the API side.
 
-## 9. Still to run
+## 10. Still to run
 
 | Area | Note |
 |---|---|
