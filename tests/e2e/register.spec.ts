@@ -55,9 +55,27 @@ test.describe("registration", () => {
     await page.getByLabel("Password").fill("Password123!");
     await page.getByRole("button", { name: "Create account" }).click();
 
+    // Either the new account signs in, or the API says the hour's registration
+    // budget is gone. Waiting only for the URL would report a 30 second timeout
+    // and hide which of the two happened.
+    const rateLimited = page
+      .getByRole("alert")
+      .filter({ hasText: /too many registration attempts/i });
+
+    await expect(async () => {
+      expect((await rateLimited.count()) > 0 || /\/dashboard/.test(page.url())).toBe(true);
+    }).toPass({ timeout: 20_000 });
+
+    // Skipped, not failed. The app did the right thing by showing the API's
+    // message; there is simply no budget left to create an account with. 5 per
+    // hour per IP, so a few debugging runs use it up.
+    test.skip(
+      (await rateLimited.count()) > 0,
+      "the API allows only 5 registrations an hour per IP and that budget is spent",
+    );
+
     // The API returns a token with the new account, so registration signs the
     // user in rather than sending them back to the login page.
-    await page.waitForURL(/\/dashboard/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Welcome back");
 
     // A new account is a patient, never an admin, whatever the API defaults to.

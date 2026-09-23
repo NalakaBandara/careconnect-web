@@ -30,6 +30,38 @@ export async function logout(page: Page) {
 }
 
 /**
+ * Waits until the slot picker is actually showing times, and returns the
+ * locator for them.
+ *
+ * A day the API did not answer for is labelled "Not loaded" rather than "Full",
+ * so this can tell a rate limit apart from a genuinely empty diary. The limit is
+ * 30 requests a minute and this page costs about ten, so reloading after a pause
+ * is the correct response, not a failure. The 90 second ceiling is longer than
+ * the 60 second window.
+ */
+export async function waitForAvailability(page: Page) {
+  const free = page.locator('a[href*="&time="]');
+
+  await expect(
+    async () => {
+      if (await free.first().isVisible()) return;
+
+      const notLoaded = await page.getByText("Not loaded").first().isVisible();
+      expect(
+        notLoaded,
+        "the clinic has no free times at all, which is a data problem rather than a rate limit",
+      ).toBe(true);
+
+      await page.reload();
+      expect(await free.first().isVisible()).toBe(true);
+    },
+    "availability never loaded, so the API kept refusing the requests",
+  ).toPass({ timeout: 90_000, intervals: [5_000, 10_000, 15_000, 20_000, 20_000, 20_000] });
+
+  return free;
+}
+
+/**
  * Walks the booking flow and returns the booking reference.
  *
  * Picks the first free time rather than a fixed one, because previous runs of
@@ -53,28 +85,7 @@ export async function bookFirstFreeSlot(page: Page, doctorId = "1") {
 
     // Only a free time is a link; a taken one renders as a disabled button, so
     // there is nothing to filter out here.
-    const free = page.locator('a[href*="&time="]');
-
-    // A day the API did not answer for is labelled "Not loaded" rather than
-    // "Full", so the two can be told apart here. Reload until the times arrive:
-    // the limit is 30 requests a minute, so the budget comes back on its own
-    // and waiting is the correct response, not a failure. The window is 60
-    // seconds, hence the 90 second ceiling.
-    await expect(
-      async () => {
-        if (await free.first().isVisible()) return;
-
-        const notLoaded = await page.getByText("Not loaded").first().isVisible();
-        expect(
-          notLoaded,
-          "the clinic has no free times at all, which is a data problem rather than a rate limit",
-        ).toBe(true);
-
-        await page.reload();
-        expect(await free.first().isVisible()).toBe(true);
-      },
-      "availability never loaded, so the API kept refusing the requests",
-    ).toPass({ timeout: 90_000, intervals: [5_000, 10_000, 15_000, 20_000, 20_000, 20_000] });
+    const free = await waitForAvailability(page);
 
     const count = await free.count();
     if (attempt >= count) break;

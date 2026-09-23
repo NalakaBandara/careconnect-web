@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 import { PATIENT_STATE } from "./auth-state";
-import { bookFirstFreeSlot, cancelAppointment } from "./helpers";
+import { bookFirstFreeSlot, cancelAppointment, waitForAvailability } from "./helpers";
 
 // Whole journeys through a real browser, against the real API. Only the desktop
 // project runs this file; see playwright.config.ts.
@@ -84,7 +84,7 @@ test.describe("booking and managing an appointment", () => {
   // The longer timeout is for the API's rate limit: loading availability costs
   // one request per working day, and when the minute's budget is gone the
   // helper waits for it to come back rather than calling that a failure.
-  test.describe.configure({ mode: "serial", timeout: 150_000 });
+  test.describe.configure({ mode: "serial", timeout: 420_000 });
 
   test("books the first free slot, sees it listed, then cancels it", async ({ page }) => {
     const reference = await bookFirstFreeSlot(page);
@@ -123,11 +123,21 @@ test.describe("booking and managing an appointment", () => {
     // same words.
     await expect(page.getByRole("heading", { level: 1, name: "Choose a new time" })).toBeVisible();
 
-    // Any free time other than the one already held.
-    await page.locator('a[href*="&time="]').last().click();
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Confirm the new time" }),
-    ).toBeVisible();
+    // Picking a time and reaching the confirm step is retried as one unit.
+    // Choosing a time reloads the page, which needs availability again, and if
+    // the API's 30-a-minute limit bites in between, the page correctly falls
+    // back to step one and says the times could not be loaded. Retrying is what
+    // a person would do.
+    const confirmStep = page.getByRole("heading", { level: 1, name: "Confirm the new time" });
+
+    await expect(async () => {
+      if (await confirmStep.isVisible()) return;
+
+      const free = await waitForAvailability(page);
+      // .last(), so it is a different time from the one already held.
+      await free.last().click();
+      await expect(confirmStep).toBeVisible({ timeout: 10_000 });
+    }).toPass({ timeout: 180_000, intervals: [5_000, 20_000, 30_000, 30_000, 30_000] });
     // Retried, because confirming re-checks availability against the API and
     // that can run into the 30-a-minute limit. The app now says "we could not
     // confirm that time just now" rather than claiming the slot is taken, so
@@ -136,7 +146,7 @@ test.describe("booking and managing an appointment", () => {
       if (/moved=1/.test(page.url())) return;
       await page.getByRole("button", { name: "Confirm new time" }).click();
       await page.waitForURL(/moved=1/, { timeout: 20_000 });
-    }).toPass({ timeout: 100_000, intervals: [15_000, 25_000, 25_000] });
+    }).toPass({ timeout: 150_000, intervals: [15_000, 30_000, 30_000, 30_000] });
     await expect(page.getByText(/has been moved/i)).toBeVisible();
 
     // The reference deliberately does not change when an appointment moves:
