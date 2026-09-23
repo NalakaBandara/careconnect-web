@@ -1,4 +1,19 @@
 import { defineConfig, devices } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+
+// Playwright does not read .env.local the way Next does, so the test account
+// credentials are loaded here. Parsed rather than pulling in a dependency for
+// four lines.
+const envPath = path.join(__dirname, ".env.local");
+if (fs.existsSync(envPath)) {
+  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+    const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (match && !process.env[match[1]]) {
+      process.env[match[1]] = match[2].trim().replace(/^["']|["']$/g, "");
+    }
+  }
+}
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
@@ -24,10 +39,36 @@ export default defineConfig({
   // so they run in Chromium and only the viewport and touch settings are
   // borrowed. Installing WebKit as well would be worth it for testing actual
   // Safari behaviour, which is a different job.
+  //
+  // Journey tests create real records on the shared API, so they run at one
+  // size only. Running them three times over would book the same slot three
+  // times and race with themselves. The tablet and mobile projects therefore
+  // run the layout checks alone, which is all they are for.
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "tablet", use: { ...devices["iPad Mini"], browserName: "chromium" } },
-    { name: "mobile", use: { ...devices["iPhone SE"], browserName: "chromium" } },
+    // Signs in once and saves the session for the rest to reuse. The API rate
+    // limits authentication (5 registrations an hour, 10 logins per 15
+    // minutes), so signing in inside each test burns the budget and then
+    // fails with 429s that look like application bugs.
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+
+    {
+      name: "desktop",
+      // Everything except the setup file, which is the setup project's job and
+      // would otherwise be run twice.
+      testIgnore: /auth\.setup\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
+    },
+    {
+      name: "tablet",
+      testMatch: /responsive\.spec\.ts/,
+      use: { ...devices["iPad Mini"], browserName: "chromium" },
+    },
+    {
+      name: "mobile",
+      testMatch: /responsive\.spec\.ts/,
+      use: { ...devices["iPhone SE"], browserName: "chromium" },
+    },
   ],
 
   // Starts the dev server if it is not already running, and reuses one that
