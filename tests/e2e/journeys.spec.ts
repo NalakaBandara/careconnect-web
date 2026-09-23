@@ -37,7 +37,9 @@ test.describe("browsing the directory as a guest", () => {
   test("filtering by speciality changes the URL and the count", async ({ page }) => {
     await page.goto("/professionals");
 
-    const select = page.getByLabel("Speciality");
+    // exact, because the search box above is labelled "Professional name or
+    // speciality" and a substring match picks up both.
+    const select = page.getByLabel("Speciality", { exact: true });
     const options = await select.locator("option").allTextContents();
     expect(options.length, "no specialities were offered by the API").toBeGreaterThan(1);
 
@@ -113,11 +115,15 @@ test.describe("booking and managing an appointment", () => {
       .textContent();
 
     await page.getByRole("link", { name: "Reschedule" }).click();
-    await expect(page.getByRole("heading", { name: /choose a new time/i })).toBeVisible();
+    // level: 1, because the step heading and the panel heading below it say the
+    // same words.
+    await expect(page.getByRole("heading", { level: 1, name: "Choose a new time" })).toBeVisible();
 
     // Any free time other than the one already held.
     await page.locator('a[href*="&time="]').last().click();
-    await expect(page.getByRole("heading", { name: /confirm the new time/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Confirm the new time" }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Confirm new time" }).click();
 
     await page.waitForURL(/moved=1/);

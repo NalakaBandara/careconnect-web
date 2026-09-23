@@ -142,13 +142,25 @@ export async function fetchAvailability(
         )}&date=${date}`,
       );
 
-      const groups = groupSlots(body?.slots ?? [], scheduleFinder(date));
-
-      return {
+      const common = {
         date,
         weekday: shortWeekday(date),
         dayMonth: shortDate(date),
         longDate: longDate(date),
+      };
+
+      // No answer at all. Falling back to an empty list here would render the
+      // day as "Full", which is a different claim entirely and one we cannot
+      // support. The API rate limits reads to 30 a minute and this page makes
+      // one request per working day, so a failure is realistic, not theoretical.
+      if (body === null) {
+        return { ...common, freeCount: 0, groups: [], unknown: true } satisfies SlotDay;
+      }
+
+      const groups = groupSlots(body.slots ?? [], scheduleFinder(date));
+
+      return {
+        ...common,
         freeCount: groups.reduce(
           (total, group) => total + group.slots.filter((slot) => !slot.taken).length,
           0,
@@ -166,7 +178,12 @@ export function findDay(days: SlotDay[], date: string): SlotDay | undefined {
 }
 
 export function firstBookableDay(days: SlotDay[]): SlotDay | undefined {
-  return days.find((day) => day.freeCount > 0);
+  return days.find((day) => day.freeCount > 0 && !day.unknown);
+}
+
+/** Did any day fail to load? The page says so rather than implying a full diary. */
+export function hasUnknownDays(days: SlotDay[]): boolean {
+  return days.some((day) => day.unknown);
 }
 
 /**

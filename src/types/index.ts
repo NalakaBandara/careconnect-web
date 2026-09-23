@@ -77,6 +77,13 @@ export interface SlotDay {
   longDate: string; // "Wednesday 17 September 2026"
   freeCount: number;
   groups: SlotGroup[];
+  /**
+   * The API did not answer for this day, so whether anything is free is
+   * unknown. Kept separate from freeCount: 0, because telling somebody a clinic
+   * is fully booked when the truth is that the request failed sends them away
+   * for no reason.
+   */
+  unknown?: boolean;
 }
 
 // The API's own statuses, uppercase.

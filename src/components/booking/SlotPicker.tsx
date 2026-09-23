@@ -22,20 +22,39 @@ export default function SlotPicker({
   // rather than quietly turning into a new booking.
   const keep = `&clinic=${clinicId}${reschedule ? `&reschedule=${reschedule}` : ""}`;
 
+  const unknownCount = days.filter((day) => day.unknown).length;
+
   return (
     <div>
       <h2 className="text-lg font-semibold">Choose a day</h2>
 
+      {unknownCount > 0 && (
+        // role="status" so a screen reader is told, rather than the user only
+        // finding out by noticing a day they cannot click.
+        <p
+          role="status"
+          className="mt-3 rounded-md border border-border-strong bg-surface px-4 py-3 text-sm text-muted-foreground"
+        >
+          Times for {unknownCount === 1 ? "one day" : `${unknownCount} days`} could not be
+          loaded, so {unknownCount === 1 ? "it is" : "they are"} shown as not loaded rather than
+          full. Reloading the page usually fixes it.
+        </p>
+      )}
+
       <ul className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
         {days.map((day) => {
           const isSelected = day.date === selectedDay?.date;
-          const isFull = day.freeCount === 0;
+          // Unknown days are not offered either, but they must not claim to be
+          // full: that would be telling the patient something we do not know.
+          const isFull = day.freeCount === 0 || day.unknown === true;
 
           const content = (
             <>
               <span className="text-xs">{day.weekday}</span>
               <span className="text-base font-semibold">{day.dayMonth.split(" ")[0]}</span>
-              <span className="text-[0.7rem]">{isFull ? "Full" : `${day.freeCount} free`}</span>
+              <span className="text-[0.7rem]">
+                {day.unknown ? "Not loaded" : isFull ? "Full" : `${day.freeCount} free`}
+              </span>
             </>
           );
 
@@ -112,8 +131,9 @@ export default function SlotPicker({
         </div>
       ) : (
         <p className="mt-8 rounded-lg border border-dashed border-border-strong bg-surface p-6 text-sm text-muted-foreground">
-          There are no free appointments at this clinic in the next two weeks. Please check
-          back, or contact the clinic directly.
+          {days.some((day) => day.unknown)
+            ? "We could not load the times for some days. Please reload the page in a moment, or contact the clinic directly."
+            : "There are no free appointments at this clinic in the next two weeks. Please check back, or contact the clinic directly."}
         </p>
       )}
     </div>
