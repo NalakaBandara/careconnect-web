@@ -29,8 +29,9 @@ lives in the Figma file.
 | Usability with real users | Not yet run | Pending |
 
 Automated totals: **79 unit and component tests** (`npm test`) and **74 end-to-end tests**
-(`npm run test:e2e`), of which 72 pass, one is skipped on desktop by design and one skips when
-the API's registration quota for the hour is spent.
+(`npm run test:e2e`), of which **73 pass** and one is skipped on desktop by design, because it
+measures touch target sizes and only means anything on a touch screen. That one passes in the
+tablet and mobile projects. Every test therefore runs and passes wherever it is meant to.
 
 ---
 
@@ -371,6 +372,16 @@ availability is one request per working day. Eight workers loading pages at once
 that left its appointments behind would slowly fill the teammate's data with test bookings and
 take slots out of use.
 
+**What a full run does leave behind: one patient account.** The registration journey has to
+create a real account to be worth anything, and the API has no route for deleting a user, as an
+admin or as the owner. So that one account stays. While iterating on other tests, exclude it:
+
+```
+npx playwright test --grep-invert "registration"
+```
+
+That also keeps the run inside the API's 5-registrations-an-hour budget.
+
 **The journeys covered.** A guest searching, filtering and reading a profile. A patient
 booking the first free slot, seeing the reference on the confirmation page, finding it in
 their appointments, and cancelling it. A patient rescheduling, with a check that the booking
@@ -431,6 +442,7 @@ from failing every run to passing.
 | Availability needs a date range | One request per day means a booking page costs about ten requests against a 30-a-minute limit. `GET /doctors/:id/available-slots?clinicId=1&from=…&to=…` would make it one. This is the root cause of DEF-016 and DEF-018 | 23 Sep 2026, still open |
 | A doctor with no clinics disappears | `GET /doctors` omits them and `GET /doctors/:id` returns 404, so an admin cannot put them back. Looks like an inner join that should be a left join. The admin screens guard against reaching that state | 23 Sep 2026, cannot verify from outside |
 | No way to remove a doctor profile | `DELETE /doctors/:id` is not defined at all: the response is Express's default HTML "Cannot DELETE" page rather than the JSON 404 a missing record gives. So a doctor created by mistake is permanent | 23 Sep 2026, new |
+| No way to delete a user account | Neither `DELETE /users/:id` as an admin nor `DELETE /auth/me` as the owner exists, both give Express's default HTML 404. This is a GDPR problem, not only an untidiness one: the right to erasure has no route to satisfy it, by deletion or by anonymisation | 23 Sep 2026, new |
 | Licence number in the appointment response | `GET /appointments/me` returns the doctor's licence number to the patient, which they have no use for | |
 
 ### Evidence for the date range, 23 September 2026
