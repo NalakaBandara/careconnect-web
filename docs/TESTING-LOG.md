@@ -426,11 +426,34 @@ from failing every run to passing.
 
 ## 8. Open, and waiting on the API
 
-| Item | Detail |
-|---|---|
-| Availability needs a date range | One request per day means a booking page costs about ten requests against a 30-a-minute limit. `GET /doctors/:id/available-slots?clinicId=1&from=…&to=…` would make it one. This is the root cause of DEF-016 and DEF-018 |
-| A doctor with no clinics disappears | `GET /doctors` omits them and `GET /doctors/:id` returns 404, so an admin cannot put them back. Looks like an inner join that should be a left join. The admin screens guard against reaching that state |
-| Licence number in the appointment response | `GET /appointments/me` returns the doctor's licence number to the patient, which they have no use for |
+| Item | Detail | Last checked |
+|---|---|---|
+| Availability needs a date range | One request per day means a booking page costs about ten requests against a 30-a-minute limit. `GET /doctors/:id/available-slots?clinicId=1&from=…&to=…` would make it one. This is the root cause of DEF-016 and DEF-018 | 23 Sep 2026, still open |
+| A doctor with no clinics disappears | `GET /doctors` omits them and `GET /doctors/:id` returns 404, so an admin cannot put them back. Looks like an inner join that should be a left join. The admin screens guard against reaching that state | 23 Sep 2026, cannot verify from outside |
+| No way to remove a doctor profile | `DELETE /doctors/:id` is not defined at all: the response is Express's default HTML "Cannot DELETE" page rather than the JSON 404 a missing record gives. So a doctor created by mistake is permanent | 23 Sep 2026, new |
+| Licence number in the appointment response | `GET /appointments/me` returns the doctor's licence number to the patient, which they have no use for | |
+
+### Evidence for the date range, 23 September 2026
+
+```
+GET /doctors/1/available-slots?clinicId=1&from=2026-09-23&to=2026-10-06
+  400 {"error":{"code":"INVALID_REQUEST","message":"clinicId and date are required"}}
+
+startDate/endDate and dateFrom/dateTo: the same 400.
+date=2026-09-23&to=2026-10-06: 200, but the body still covers that one date,
+so the extra parameter is ignored rather than honoured.
+```
+
+### Why the no-clinic defect cannot be verified from here
+
+The broken state does not currently exist to look at. There is one doctor and it has a clinic,
+and of 20 users only one holds the DOCTOR role, so there is no hidden doctor profile to find by
+comparing the two lists.
+
+Producing the state means either removing that doctor's only clinic, which risks losing the
+system's only doctor with no way back, or promoting a spare account to doctor, which cannot be
+undone because there is no delete. Neither is a reasonable thing to do to a shared database to
+confirm somebody else's fix, so it has been passed back to be tested on the API side.
 
 ## 9. Still to run
 
