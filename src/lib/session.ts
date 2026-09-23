@@ -4,7 +4,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { decodeJwt, jwtVerify, type JWTPayload } from "jose";
 
-import { isAdminRole, type Role } from "@/lib/roles";
+import { isAdminRole } from "@/lib/roles";
 
 // The ONLY file that touches the session cookie. Everything else asks this
 // module. That keeps the swap to the Express API to one place.
@@ -94,10 +94,6 @@ export const getSession = cache(async function getSession(): Promise<SessionUser
     return null; // not a readable token at all
   }
 })
-
-export function hasRole(user: SessionUser | null, role: Role) {
-  return user?.roles.includes(role) ?? false;
-}
 
 // Prefer this over hasRole(user, "ADMIN") at call sites: which roles count as
 // admin is a policy decision, and it lives in one place.

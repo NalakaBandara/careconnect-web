@@ -37,7 +37,10 @@ export default function Hero() {
             width={1200}
             height={900}
             // The hero is the largest thing above the fold, so it loads first.
-            priority
+            // preload, not priority: priority was deprecated in Next 16. This is
+            // the hero, so it is the largest contentful paint and above the fold,
+            // which is what preload is for.
+            preload
             className="aspect-4/3 w-full rounded-lg border border-border object-cover shadow-raised"
           />
           <div className="absolute -bottom-6 -left-6 hidden rounded-lg border border-border bg-background/95 p-4 shadow-raised backdrop-blur sm:block">

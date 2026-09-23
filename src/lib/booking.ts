@@ -202,11 +202,6 @@ export function firstBookableDay(days: SlotDay[]): SlotDay | undefined {
   return days.find((day) => day.freeCount > 0 && !day.unknown);
 }
 
-/** Did any day fail to load? The page says so rather than implying a full diary. */
-export function hasUnknownDays(days: SlotDay[]): boolean {
-  return days.some((day) => day.unknown);
-}
-
 /**
  * The same check as resolveFreeSlot, but it says WHY when the answer is no.
  *

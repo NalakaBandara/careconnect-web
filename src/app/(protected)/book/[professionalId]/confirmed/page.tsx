@@ -20,15 +20,21 @@ export default async function ConfirmedPage({
   const { professionalId } = await params;
   const { ref } = await searchParams;
 
-  const professional = await fetchProfessional(professionalId);
-  if (!professional) notFound();
-
-  const user = await getSession();
   const reference = typeof ref === "string" ? ref : "";
 
-  // Looked up inside this user's own appointments, so somebody else's
-  // reference simply is not found rather than showing their booking.
-  const appointment = await fetchAppointmentByReference(reference);
+  // All three at once. None depends on the others, so awaiting them one after
+  // another only made this page wait for the sum of three round trips.
+  //
+  // The appointment is looked up inside this user's own appointments, so
+  // somebody else's reference simply is not found rather than showing their
+  // booking.
+  const [professional, user, appointment] = await Promise.all([
+    fetchProfessional(professionalId),
+    getSession(),
+    fetchAppointmentByReference(reference),
+  ]);
+
+  if (!professional) notFound();
   if (!appointment) notFound();
 
 

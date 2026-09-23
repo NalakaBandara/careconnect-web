@@ -6,7 +6,7 @@ import type { Professional } from "@/types";
 
 // A doctor can work at several clinics. Where the design has room for one, the
 // first is shown and the rest are counted.
-export function primaryClinic(professional: Professional) {
+function primaryClinic(professional: Professional) {
   return professional.clinics[0];
 }
 
