@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LoginForm from "@/components/LoginForm";
+import { safeNext } from "@/lib/redirects";
 
 export const metadata: Metadata = {
   title: "Log in",
@@ -17,7 +18,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <p className="mt-2 mb-6 text-sm text-muted-foreground">
         Appointments, reminders and your personal details stay inside your account.
       </p>
-      <LoginForm justRegistered={params.registered === "1"} />
+      {/* Validated here, on the server, and passed to the action already
+          checked. proxy.ts put the path they were heading for in ?next=,
+          and it arrives from the URL bar, so it cannot be trusted as given. */}
+      <LoginForm justRegistered={params.registered === "1"} next={safeNext(params.next)} />
     </div>
   );
 }

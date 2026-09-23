@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { loginSchema } from "@/lib/schemas";
+import { safeNext } from "@/lib/redirects";
 import { createSession } from "@/lib/session";
 
 export type LoginState = {
@@ -11,6 +12,7 @@ export type LoginState = {
 };
 
 export async function loginAction(
+  next: string,
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
@@ -60,8 +62,16 @@ export async function loginAction(
   // Store the token in an httpOnly cookie. From here on the user is logged in.
   await createSession(body.accessToken);
 
+  // Checked again here. bind() signs its arguments, but this action is a
+  // public endpoint and validating a redirect target twice costs nothing.
   // Outside any try/catch - redirect() signals by throwing.
-  redirect("/dashboard");
+  //
+  // The cast is needed because typedRoutes narrows redirect() to routes known
+  // at build time, and this one is only known at run time. The type is taken
+  // from redirect's own signature rather than written out, so it cannot drift
+  // from it. safeNext is what makes the value safe; the cast only tells the
+  // compiler that.
+  redirect(safeNext(next) as Parameters<typeof redirect>[0]);
 }
 
 export async function logoutAction() {

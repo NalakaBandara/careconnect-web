@@ -8,8 +8,16 @@ import { loginAction, type LoginState } from "@/app/(auth)/login/actions";
 
 const EMPTY: LoginState = {};
 
-export default function LoginForm({ justRegistered }: { justRegistered: boolean }) {
-  const [state, formAction, isPending] = useActionState(loginAction, EMPTY);
+export default function LoginForm({
+  justRegistered,
+  next = "/dashboard",
+}: {
+  justRegistered: boolean;
+  next?: string;
+}) {
+  // bind() fixes the destination on the server. A hidden input would put it
+  // in the HTML for anyone to edit before submitting.
+  const [state, formAction, isPending] = useActionState(loginAction.bind(null, next), EMPTY);
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>

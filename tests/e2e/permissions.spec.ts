@@ -38,6 +38,46 @@ test.describe("what a guest can reach", () => {
   }
 });
 
+test.describe("where signing in sends you", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  const EMAIL = process.env.E2E_PATIENT_EMAIL ?? "";
+  const PASSWORD = process.env.E2E_PATIENT_PASSWORD ?? "";
+
+  async function signIn(page: import("@playwright/test").Page) {
+    await page.getByLabel("Email").fill(EMAIL);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: /log in/i }).click();
+  }
+
+  test("back to the page they were trying to reach", async ({ page }) => {
+    // Turned away from a protected page, so ?next= should bring them back to
+    // it rather than dropping them on the dashboard.
+    await page.goto("/dashboard/appointments");
+    await expect(page).toHaveURL(/\/login\?next=%2Fdashboard%2Fappointments/);
+
+    await signIn(page);
+    await expect(page).toHaveURL(/\/dashboard\/appointments$/);
+  });
+
+  test("and never to another site, whatever ?next= says", async ({ page }) => {
+    // An open redirect. The link looks like CareConnect, and is, until the
+    // moment the password is typed and the user is handed to a copy of the
+    // login page. So an off-site destination has to be ignored.
+    await page.goto("/login?next=https://example.com/login");
+    await signIn(page);
+
+    await expect(page).toHaveURL(/localhost:3000\/dashboard/);
+  });
+
+  test("nor to a protocol-relative URL, which looks like a path", async ({ page }) => {
+    await page.goto("/login?next=//example.com");
+    await signIn(page);
+
+    await expect(page).toHaveURL(/localhost:3000\/dashboard/);
+  });
+});
+
 test.describe("what a signed-in patient can reach", () => {
   test.use({ storageState: PATIENT_STATE });
 

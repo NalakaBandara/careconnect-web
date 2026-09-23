@@ -106,7 +106,10 @@ describe("LoginForm", () => {
     await userEvent.type(screen.getByLabelText("Password"), "password1");
     await submit();
 
-    const formData = loginAction.mock.calls[0]?.[1] as FormData;
+    // Index 2, not 1. The component binds the post-login destination as the
+    // first argument, so useActionState's state and formData shift along.
+    expect(loginAction.mock.calls[0]?.[0]).toBe("/dashboard");
+    const formData = loginAction.mock.calls[0]?.[2] as FormData;
     expect(formData.get("email")).toBe("amara@example.com");
     expect(formData.get("password")).toBe("password1");
   });
