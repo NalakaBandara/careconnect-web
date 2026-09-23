@@ -11,7 +11,7 @@ is given.
 
 ## Summary
 
-**15 defects found, 12 fixed, 3 open.** The three open ones are recorded with the reason
+**18 defects found, 15 fixed, 3 open.** The three open ones are recorded with the reason
 rather than dropped: one is emitted by React itself and one is a brand decision that also
 lives in the Figma file.
 
@@ -21,11 +21,16 @@ lives in the Figma file.
 | W3C HTML validation | W3C Nu validator, all 15 pages | 3 defects found and fixed, 1 open (framework) |
 | Accessibility structure | Scripted audit of all 17 pages | 4 defects found and fixed |
 | Colour contrast | WCAG AA calculated from the design tokens | 3 failures, accepted as a known exception |
-| Authentication and permissions | Manual, against the live API | Passing |
+| Authentication and permissions | Manual, then automated in Playwright | Passing, 24 tests |
 | Cross-user data visibility | Manual, two accounts | Passing |
-| Unit and component tests | Vitest, 85 tests | 2 defects found and fixed |
-| Responsiveness | Not yet run | Pending |
+| Unit and component tests | Vitest, 79 tests | 2 defects found and fixed |
+| Responsiveness | Playwright at phone, tablet and desktop widths | Passing, 41 tests |
+| End-to-end journeys | Playwright against the live API | 3 defects found and fixed |
 | Usability with real users | Not yet run | Pending |
+
+Automated totals: **79 unit and component tests** (`npm test`) and **74 end-to-end tests**
+(`npm run test:e2e`), of which 72 pass, one is skipped on desktop by design and one skips when
+the API's registration quota for the hour is spent.
 
 ---
 
@@ -342,11 +347,95 @@ than refused, which also avoids confirming that it exists.
 
 ---
 
-## 7. Still to run
+## 7. End-to-end journeys
+
+**Method.** Playwright, driving Chromium against the running app and the live API.
+74 tests: 24 permission checks, 7 journeys, 5 registration checks and 41 layout checks
+at three widths.
+
+### How the suite is arranged, and why
+
+**One sign-in per run, not one per test.** The API rate limits authentication to 5
+registrations an hour and 10 logins per 15 minutes, per IP. The first version registered a
+fresh patient inside every test, spent the whole hour's budget in a single run, and then
+failed with 429s that read exactly like application bugs. A setup project now signs in once
+as a patient and once as an admin, saves each session, and every other test declares which
+saved session it wants. The guest tests declare an empty session, so they are a genuine first
+visit rather than whatever the previous test left behind.
+
+**Three workers, not eight.** A booking page load costs about ten API requests, because
+availability is one request per working day. Eight workers loading pages at once spent the
+30-a-minute read budget in seconds.
+
+**The booking tests cancel what they book.** They run against the shared database, so a run
+that left its appointments behind would slowly fill the teammate's data with test bookings and
+take slots out of use.
+
+**The journeys covered.** A guest searching, filtering and reading a profile. A patient
+booking the first free slot, seeing the reference on the confirmation page, finding it in
+their appointments, and cancelling it. A patient rescheduling, with a check that the booking
+reference does not change, because the patient and the clinic have already quoted it to each
+other.
+
+### DEF-016: a failed availability request was shown as a full diary
+
+**Severity:** high. **Fixed.**
+
+`fetchAvailability` asked the API for one day at a time and fell back to an empty slot list
+whenever a request did not come back. The picker renders an empty day as "Full", so a request
+that failed looked identical to a clinic with nothing free, and the page could tell a patient
+"there are no free appointments at this clinic in the next two weeks" when the truth was that
+the server never answered.
+
+**How it was caught.** A journey test suddenly reported every day as full. The API had
+returned 429, because the page makes one request per working day against a 30-a-minute limit.
+
+**Fix.** A day whose request failed is marked unknown and labelled "Not loaded", it is never
+auto-selected, and the page says how many days could not be loaded and that reloading usually
+fixes it. "We do not know" and "there is nothing free" are different claims, and only one of
+them is ours to make.
+
+### DEF-017: the same mistake inside the booking and reschedule actions
+
+**Severity:** high. **Fixed.**
+
+Both actions re-check the slot before writing, which is right: a form can sit open for a long
+while. But they treated every negative answer as "somebody has taken it", so a re-check that
+could not reach the API told the patient their slot was gone and sent them off to pick another
+one that would fail in exactly the same way.
+
+**Fix.** `checkSlot` now returns free, taken or unknown, and unknown says "we could not
+confirm that time just now, please try again in a moment".
+
+**What this shows.** DEF-016 and DEF-017 are one mistake in two places: treating "no answer"
+as "no". Fixing the display did not fix the write path, because they read the data separately.
+
+### DEF-018: verifying one slot cost seven API requests
+
+**Severity:** medium, efficiency. **Fixed.**
+
+The re-check above called `fetchAvailability`, which fetches the whole fortnight, one request
+per working day, in order to answer a question about one time on one date. Against a
+30-a-minute limit that is expensive enough to defeat itself: a patient who booked and then
+rescheduled ran out of budget and was told the time was unavailable.
+
+**Fix.** `fetchDayAvailability` fetches the single day in question. The reschedule journey went
+from failing every run to passing.
+
+---
+
+## 8. Open, and waiting on the API
+
+| Item | Detail |
+|---|---|
+| Availability needs a date range | One request per day means a booking page costs about ten requests against a 30-a-minute limit. `GET /doctors/:id/available-slots?clinicId=1&from=…&to=…` would make it one. This is the root cause of DEF-016 and DEF-018 |
+| A doctor with no clinics disappears | `GET /doctors` omits them and `GET /doctors/:id` returns 404, so an admin cannot put them back. Looks like an inner join that should be a left join. The admin screens guard against reaching that state |
+| Licence number in the appointment response | `GET /appointments/me` returns the doctor's licence number to the patient, which they have no use for |
+
+## 9. Still to run
 
 | Area | Note |
 |---|---|
-| End-to-end workflows | Needs a browser-driving tool; async Server Components cannot be unit tested |
-| Responsiveness | At real phone and tablet widths |
-| Usability with real users | |
-| Admin screens | Being rebuilt against the API's model, where an admin promotes an existing user rather than creating a doctor |
+| Usability with real users | Needs people, not a script |
+| Security and performance review | |
+| Deployment over HTTPS | |
