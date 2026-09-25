@@ -52,11 +52,9 @@ export default async function EditDoctorPage({
       <section className="mt-12 max-w-2xl">
         <h2 className="font-serif text-xl font-semibold">Clinics</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Appointments are always made at a clinic. A doctor with none disappears from the
-          public directory entirely, which is how somebody is taken out of use without
-          destroying the appointments already booked with them.
-          Their last clinic cannot be removed here, because the API would then stop
-          returning them at all and this page could no longer be opened.
+          Appointments are always made at a clinic. A doctor with none stays listed but
+          cannot be booked, which is how somebody is taken out of use without destroying
+          the appointments already booked with them.
         </p>
 
         {doctor.clinics.length === 0 && (
