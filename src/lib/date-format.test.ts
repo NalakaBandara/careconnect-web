@@ -39,8 +39,8 @@ describe("date formatting", () => {
 });
 
 describe("slotHasPassed", () => {
-  // 14:30 UTC on 25 September 2026 is 15:30 in London (BST).
-  const now = new Date("2026-09-25T14:30:00Z");
+  // 09:00 UTC on 25 September 2026 is 14:30 in Colombo (UTC+5:30).
+  const now = new Date("2026-09-25T09:00:00Z");
 
   it("treats an earlier time today as passed", () => {
     expect(slotHasPassed("2026-09-25", "09:00", now)).toBe(true);
@@ -51,12 +51,12 @@ describe("slotHasPassed", () => {
   });
 
   it("uses the clinic's clock, not UTC", () => {
-    // 15:00 is after 14:30 UTC but before 15:30 London time, so it has passed.
-    expect(slotHasPassed("2026-09-25", "15:00", now)).toBe(true);
+    // 12:00 is after 09:00 UTC but before 14:30 in Colombo, so it has passed.
+    expect(slotHasPassed("2026-09-25", "12:00", now)).toBe(true);
   });
 
   it("counts a slot starting this minute as passed", () => {
-    expect(slotHasPassed("2026-09-25", "15:30", now)).toBe(true);
+    expect(slotHasPassed("2026-09-25", "14:30", now)).toBe(true);
   });
 
   it("compares whole days before looking at times", () => {

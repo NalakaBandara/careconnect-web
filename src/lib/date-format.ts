@@ -56,8 +56,8 @@ export function shortDate(iso: string): string {
 // "Today" and "now" mean the clinic's today and now, not the server's. The
 // server may run in UTC while the clinic is hours ahead or behind, and near
 // midnight that puts them on different dates. Set CLINIC_TIME_ZONE to an IANA
-// name such as "Europe/London"; that is also the default.
-const DEFAULT_TIME_ZONE = "Europe/London";
+// name such as "Asia/Colombo"; that is also the default, since the clinics are in Sri Lanka.
+const DEFAULT_TIME_ZONE = "Asia/Colombo";
 
 function clinicNow(now: Date = new Date()): { date: string; time: string } {
   const read = (timeZone: string) => {
