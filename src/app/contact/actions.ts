@@ -2,6 +2,15 @@
 
 import { contactSchema } from "@/lib/schemas";
 
+// The API has no contact endpoint, so enquiries go to this app's own stub route.
+// Locally that is STUB_BASE_URL. On Render, RENDER_EXTERNAL_URL is set
+// automatically to the site's public address, so nothing has to be configured.
+function contactBaseUrl() {
+  if (process.env.STUB_BASE_URL) return process.env.STUB_BASE_URL;
+  if (process.env.RENDER_EXTERNAL_URL) return `${process.env.RENDER_EXTERNAL_URL}/api`;
+  return "http://localhost:3000/api";
+}
+
 export type ContactState = {
   ok?: boolean;
   message?: string;
@@ -37,7 +46,7 @@ export async function contactAction(
 
   let response: Response;
   try {
-    response = await fetch(`${process.env.STUB_BASE_URL}/contact`, {
+    response = await fetch(`${contactBaseUrl()}/contact`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(parsed.data),

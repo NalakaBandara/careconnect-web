@@ -1,0 +1,23 @@
+# Render Blueprint for the CareConnect web app.
+# In Render: New > Blueprint > pick this repository. Render reads this file,
+# creates the service and serves it over HTTPS on an onrender.com address.
+services:
+  - type: web
+    name: careconnect-web
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      # Next 16 needs Node 20.9 or newer.
+      - key: NODE_VERSION
+        value: "24"
+      - key: API_BASE_URL
+        value: https://careconnect-api-sb5u.onrender.com/api/v1
+      - key: CLINIC_TIME_ZONE
+        value: Asia/Colombo
+      # Secret: the API's JWT signing secret. Render asks for it when the
+      # Blueprint is created; it is never stored in the repository.
+      - key: API_JWT_SECRET
+        sync: false
