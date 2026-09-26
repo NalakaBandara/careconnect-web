@@ -53,8 +53,47 @@ export function shortDate(iso: string): string {
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()].slice(0, 3)}`;
 }
 
+// "Today" and "now" mean the clinic's today and now, not the server's. The
+// server may run in UTC while the clinic is hours ahead or behind, and near
+// midnight that puts them on different dates. Set CLINIC_TIME_ZONE to an IANA
+// name such as "Europe/London"; that is also the default.
+const DEFAULT_TIME_ZONE = "Europe/London";
+
+function clinicNow(now: Date = new Date()): { date: string; time: string } {
+  const read = (timeZone: string) => {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(now);
+    const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+    return { date: `${get("year")}-${get("month")}-${get("day")}`, time: `${get("hour")}:${get("minute")}` };
+  };
+
+  try {
+    return read(process.env.CLINIC_TIME_ZONE || DEFAULT_TIME_ZONE);
+  } catch {
+    // A misspelt zone name throws. Fall back rather than break every page.
+    return read(DEFAULT_TIME_ZONE);
+  }
+}
+
 export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return clinicNow().date;
+}
+
+/**
+ * Has this slot already started? Times are "HH:MM", which compare correctly as
+ * text. A slot starting this very minute counts as passed: nobody can get there.
+ */
+export function slotHasPassed(date: string, time: string, now: Date = new Date()): boolean {
+  const current = clinicNow(now);
+  if (date !== current.date) return date < current.date;
+  return time.slice(0, 5) <= current.time;
 }
 
 export function isWeekend(iso: string): boolean {

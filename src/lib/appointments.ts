@@ -87,8 +87,33 @@ export function canCancel(appointment: DecoratedAppointment): boolean {
   return !appointment.isPast && ACTIVE.includes(appointment.status);
 }
 
-export async function cancelAppointment(id: string): Promise<boolean> {
-  return (await call(`/appointments/${encodeURIComponent(id)}`, { method: "DELETE" })) !== null;
+// A change the API can refuse for a reason worth telling the patient, such as
+// "Cannot cancel an appointment that has already started or passed". call()
+// throws the body away on failure, so these read the response themselves and
+// pass the API's own message through.
+async function mutate(path: string, init: RequestInit): Promise<{ error: string | null }> {
+  const token = await getSessionToken();
+
+  const response = await fetch(`${process.env.API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  }).catch(() => null);
+
+  if (!response) return { error: "Could not reach the server. Please try again." };
+  if (response.ok) return { error: null };
+
+  const body = await response.json().catch(() => null);
+  // An empty string still means "failed", just with nothing to say. null is
+  // reserved for success, so a silent refusal is never mistaken for one.
+  return { error: body?.error?.message ?? "" };
+}
+
+export async function cancelAppointment(id: string): Promise<{ error: string | null }> {
+  return mutate(`/appointments/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export async function moveAppointment(
@@ -99,12 +124,11 @@ export async function moveAppointment(
     endTime: string;
     doctorScheduleId: string;
   },
-): Promise<boolean> {
-  const result = await call(`/appointments/${encodeURIComponent(id)}`, {
+): Promise<{ error: string | null }> {
+  return mutate(`/appointments/${encodeURIComponent(id)}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });
-  return result !== null;
 }
 
 export async function createAppointment(input: {

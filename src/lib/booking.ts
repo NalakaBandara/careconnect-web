@@ -1,6 +1,6 @@
 import "server-only";
 
-import { longDate, shortDate, shortWeekday } from "@/lib/date-format";
+import { longDate, shortDate, shortWeekday, slotHasPassed, todayIso } from "@/lib/date-format";
 import { getSessionToken } from "@/lib/session";
 import type { SlotDay, SlotGroup } from "@/types";
 
@@ -112,7 +112,8 @@ export async function fetchAvailability(
   const schedules = await clinicSchedules(doctorId, clinicId);
   if (schedules.length === 0) return [];
 
-  const today = new Date().toISOString().slice(0, 10);
+  // The clinic's today, not the server's. See todayIso.
+  const today = todayIso();
   const dates = Array.from({ length: dayCount }, (_, i) => addDays(today, i));
 
   const working = dates.filter((date) =>
@@ -182,7 +183,14 @@ async function fetchDay(
     return { ...common, freeCount: 0, groups: [], unknown: true } satisfies SlotDay;
   }
 
-  const groups = groupSlots(body.slots ?? [], scheduleFor);
+  // The API still lists times earlier today that have already gone, so a
+  // patient at 3pm was offered 9am. They are dropped rather than shown as
+  // taken, because "taken" would claim somebody booked them. Doing it here
+  // also means the booking re-check treats a passed time as unavailable.
+  const upcoming = (body.slots ?? []).filter(
+    (slot) => !slotHasPassed(date, slot.startTime),
+  );
+  const groups = groupSlots(upcoming, scheduleFor);
 
   return {
     ...common,

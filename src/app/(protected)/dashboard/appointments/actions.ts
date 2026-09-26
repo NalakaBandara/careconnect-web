@@ -53,8 +53,12 @@ export async function cancelAppointmentAction(
     };
   }
 
-  const ok = await cancelAppointment(appointment.id);
-  if (!ok) return { message: "The appointment could not be cancelled. Please try again." };
+  // The API's own reason when it refuses, e.g. that the appointment has
+  // already passed. Only if it gives none do we fall back to a generic line.
+  const { error } = await cancelAppointment(appointment.id);
+  if (error !== null) {
+    return { message: error || "The appointment could not be cancelled. Please try again." };
+  }
 
   revalidateAppointments(reference);
   return {};
@@ -98,14 +102,16 @@ export async function rescheduleAppointmentAction(
     return { message: "That time is no longer available. Please choose another." };
   }
 
-  const ok = await moveAppointment(appointment.id, {
+  const { error } = await moveAppointment(appointment.id, {
     appointmentDate: input.date,
     startTime: `${input.time}:00`,
     endTime: `${check.endTime}:00`,
     doctorScheduleId: check.scheduleId,
   });
 
-  if (!ok) return { message: "The appointment could not be moved. Please try again." };
+  if (error !== null) {
+    return { message: error || "The appointment could not be moved. Please try again." };
+  }
 
   revalidateAppointments(input.reference);
 
