@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import StatusBadge from "@/components/appointments/StatusBadge";
+import CloseAccount from "@/components/dashboard/CloseAccount";
 import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
 import { fetchAppointments, splitAppointments } from "@/lib/appointments";
@@ -134,6 +135,19 @@ export default async function DashboardPage() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+          Close your account
+        </h2>
+        <div className="mt-3 flex flex-col gap-4 rounded-lg border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-prose text-sm text-muted-foreground">
+            Removes your personal details and logs you out for good. Past appointments stay
+            on record for the clinic without your name attached.
+          </p>
+          <CloseAccount />
+        </div>
       </section>
     </div>
   );

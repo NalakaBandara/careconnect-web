@@ -15,7 +15,11 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+// Its own port, not 3000. Another local project was already running on 3000,
+// and because the server is reused when one is found, the tests signed in to
+// that project's login page instead of this one.
+const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3100";
+const PORT = new URL(BASE_URL).port || "3100";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -81,7 +85,7 @@ export default defineConfig({
   // Starts the dev server if it is not already running, and reuses one that
   // is, so running the tests never costs a cold start twice.
   webServer: {
-    command: "npm run dev",
+    command: `npm run dev -- --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: true,
     timeout: 120_000,

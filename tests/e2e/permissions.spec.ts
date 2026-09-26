@@ -67,14 +67,18 @@ test.describe("where signing in sends you", () => {
     await page.goto("/login?next=https://example.com/login");
     await signIn(page);
 
-    await expect(page).toHaveURL(/localhost:3000\/dashboard/);
+    // Wait for the redirect to land, then prove it is still this site.
+    await expect(page).toHaveURL(/\/dashboard/);
+    expect(new URL(page.url()).origin).toBe(new URL(test.info().project.use.baseURL!).origin);
   });
 
   test("nor to a protocol-relative URL, which looks like a path", async ({ page }) => {
     await page.goto("/login?next=//example.com");
     await signIn(page);
 
-    await expect(page).toHaveURL(/localhost:3000\/dashboard/);
+    // Wait for the redirect to land, then prove it is still this site.
+    await expect(page).toHaveURL(/\/dashboard/);
+    expect(new URL(page.url()).origin).toBe(new URL(test.info().project.use.baseURL!).origin);
   });
 });
 

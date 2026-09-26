@@ -8,9 +8,21 @@ import FaqSection from "@/components/home/FaqSection";
 import ContactSection from "@/components/home/ContactSection";
 import Reveal from "@/components/Reveal";
 
-export default function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const { closed } = await searchParams;
+
   return (
     <main id="main">
+      {closed === "1" && (
+        // role="status" so a screen reader announces it on arrival.
+        <p
+          role="status"
+          className="container-page mt-6 rounded-md border border-primary/30 bg-primary-soft px-4 py-3 text-sm"
+        >
+          Your account has been closed and your personal details removed.
+        </p>
+      )}
+
       {/* The hero is above the fold, so it is not wrapped - animating what is
           already on screen when the page loads just delays it. */}
       <Hero />
