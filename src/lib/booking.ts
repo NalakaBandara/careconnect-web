@@ -116,22 +116,28 @@ export async function fetchAvailability(
   const today = todayIso();
   const dates = Array.from({ length: dayCount }, (_, i) => addDays(today, i));
 
-  const working = dates.filter((date) =>
-    schedules.some((schedule) => schedule.dayOfWeek === weekdayOf(date)),
+  // One request for the whole fortnight. The API used to answer a single day
+  // at a time, so this page cost one request per working day, six for two
+  // weeks, against a limit of 30 a minute: about four booking views a minute
+  // for the entire site. fromDate and toDate make it one.
+  const body = await get<{ days: { date: string; slots: ApiSlot[] }[] }>(
+    `/doctors/${encodeURIComponent(doctorId)}/available-slots?clinicId=${encodeURIComponent(
+      clinicId,
+    )}&fromDate=${dates[0]}&toDate=${dates[dates.length - 1]}`,
   );
+  const slotsByDate = new Map((body?.days ?? []).map((day) => [day.date, day.slots]));
 
-  // In parallel: each day is an independent request, so doing them in sequence
-  // would make the page wait for the sum rather than the slowest.
-  return Promise.all(working.map((date) => fetchDay(doctorId, clinicId, date, schedules)));
+  // The range includes days the doctor does not work, as empty lists. Those
+  // are left out rather than shown as "Full", which would imply bookings.
+  return dates
+    .filter((date) => schedules.some((schedule) => schedule.dayOfWeek === weekdayOf(date)))
+    // No answer at all leaves every day unknown, never full.
+    .map((date) => toSlotDay(date, body === null ? null : (slotsByDate.get(date) ?? []), schedules));
 }
 
 /**
- * One day only.
- *
- * This exists because verifying a single slot used to re-fetch the whole
- * fortnight: one request per working day, to answer a question about one time
- * on one date. With a 30-a-minute budget that meant booking a slot could spend
- * seven requests proving it was free and then be refused for running out.
+ * One day only, for the re-check just before a booking or a move is saved.
+ * Asking for the fortnight to verify one time would be wasteful.
  */
 export async function fetchDayAvailability(
   doctorId: string,
@@ -141,19 +147,20 @@ export async function fetchDayAvailability(
   const schedules = await clinicSchedules(doctorId, clinicId);
   if (!schedules.some((schedule) => schedule.dayOfWeek === weekdayOf(date))) return null;
 
-  return fetchDay(doctorId, clinicId, date, schedules);
+  const body = await get<{ slots: ApiSlot[] }>(
+    `/doctors/${encodeURIComponent(doctorId)}/available-slots?clinicId=${encodeURIComponent(
+      clinicId,
+    )}&date=${date}`,
+  );
+  return toSlotDay(date, body === null ? null : (body.slots ?? []), schedules);
 }
 
 async function clinicSchedules(doctorId: string, clinicId: string) {
   return (await fetchSchedules(doctorId)).filter((schedule) => schedule.clinicId === clinicId);
 }
 
-async function fetchDay(
-  doctorId: string,
-  clinicId: string,
-  date: string,
-  schedules: DoctorSchedule[],
-): Promise<SlotDay> {
+/** One day's slots in the shape the picker uses. null means the API did not answer. */
+function toSlotDay(date: string, slots: ApiSlot[] | null, schedules: DoctorSchedule[]): SlotDay {
   // Which schedule covers a given time, so a booking can name it. A doctor can
   // have a morning and an evening schedule on the same day.
   const scheduleFor = (time: string) =>
@@ -164,12 +171,6 @@ async function fetchDay(
         time < schedule.endTime,
     )?.id;
 
-  const body = await get<{ slots: ApiSlot[] }>(
-    `/doctors/${encodeURIComponent(doctorId)}/available-slots?clinicId=${encodeURIComponent(
-      clinicId,
-    )}&date=${date}`,
-  );
-
   const common = {
     date,
     weekday: shortWeekday(date),
@@ -179,7 +180,7 @@ async function fetchDay(
 
   // No answer at all. Falling back to an empty list here would render the day
   // as "Full", which is a different claim entirely and one we cannot support.
-  if (body === null) {
+  if (slots === null) {
     return { ...common, freeCount: 0, groups: [], unknown: true } satisfies SlotDay;
   }
 
@@ -187,9 +188,7 @@ async function fetchDay(
   // patient at 3pm was offered 9am. They are dropped rather than shown as
   // taken, because "taken" would claim somebody booked them. Doing it here
   // also means the booking re-check treats a passed time as unavailable.
-  const upcoming = (body.slots ?? []).filter(
-    (slot) => !slotHasPassed(date, slot.startTime),
-  );
+  const upcoming = slots.filter((slot) => !slotHasPassed(date, slot.startTime));
   const groups = groupSlots(upcoming, scheduleFor);
 
   return {

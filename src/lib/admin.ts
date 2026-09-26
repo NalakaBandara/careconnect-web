@@ -9,6 +9,18 @@ import type { Appointment, Clinic, Service, Speciality } from "@/types";
 export type ApiResult<T> = { data: T | null; error: string | null };
 
 async function call<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
+  const { body, error } = await request(path, init);
+  if (error !== null) return { data: null, error };
+  return { data: (body?.data ?? body) as T, error: null };
+}
+
+// The whole response body, not just `data`, for callers that also need the
+// pagination block the API sends alongside it.
+async function request(
+  path: string,
+  init?: RequestInit,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<{ body: any; error: string | null }> {
   const token = await getSessionToken();
 
   let response: Response;
@@ -23,27 +35,52 @@ async function call<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> 
       cache: "no-store",
     });
   } catch {
-    return { data: null, error: "Could not reach the server. Please try again." };
+    return { body: null, error: "Could not reach the server. Please try again." };
   }
 
   // 204 means success with no body, which is what DELETE returns.
-  if (response.status === 204) return { data: null, error: null };
+  if (response.status === 204) return { body: null, error: null };
 
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
     return {
-      data: null,
+      body: null,
       error: body?.error?.message ?? "The server rejected that. Please try again.",
     };
   }
 
-  return { data: (body?.data ?? body) as T, error: null };
+  return { body, error: null };
 }
 
+/**
+ * Every item, across every page.
+ *
+ * The API pages its lists, 20 at a time by default, and reports
+ * `pagination: { page, totalPages }`. Reading only the first response meant the
+ * admin screens silently stopped at 20: with 40 users, half of them could not
+ * be chosen when promoting a doctor. So this asks for large pages and keeps
+ * going until the last one. Endpoints that do not paginate ignore the
+ * parameters and return everything at once, which ends the loop immediately.
+ */
 async function list<T>(path: string): Promise<T[]> {
-  const { data } = await call<T[]>(path);
-  return data ?? [];
+  const joiner = path.includes("?") ? "&" : "?";
+  const items: T[] = [];
+
+  // A ceiling, so a misbehaving pagination block can never loop for ever.
+  for (let page = 1; page <= 50; page++) {
+    const { body, error } = await request(`${path}${joiner}pageSize=100&page=${page}`);
+    if (error !== null || !body) break;
+
+    const data = (body.data ?? body) as T[];
+    if (!Array.isArray(data)) break;
+    items.push(...data);
+
+    const totalPages = Number(body.pagination?.totalPages ?? 1);
+    if (page >= totalPages || data.length === 0) break;
+  }
+
+  return items;
 }
 
 // --- Users -----------------------------------------------------------------
