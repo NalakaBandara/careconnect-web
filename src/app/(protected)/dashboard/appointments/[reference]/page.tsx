@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import StatusBadge from "@/components/appointments/StatusBadge";
 import CancelAppointment from "@/components/appointments/CancelAppointment";
+import CheckInCard from "@/components/appointments/CheckInCard";
 import { buttonClasses } from "@/components/Button";
 import { fetchProfessional } from "@/lib/professionals";
 import { canCancel, fetchAppointmentByReference } from "@/lib/appointments";
@@ -53,7 +54,7 @@ export default async function AppointmentDetailPage({
         </p>
       )}
 
-      <div className="mt-6 grid gap-10 xl:grid-cols-[1.4fr_0.6fr] xl:gap-12">
+      <div className="mt-6 grid gap-10 xl:grid-cols-[1.4fr_0.8fr] xl:gap-12">
         <div>
           <StatusBadge status={appointment.status} />
           <h1 className="mt-4 font-serif text-2xl font-semibold sm:text-3xl">
@@ -98,41 +99,52 @@ export default async function AppointmentDetailPage({
           )}
         </div>
 
-        <aside className="h-fit rounded-lg border border-border bg-background p-6 shadow-soft">
-          <h2 className="font-serif text-lg font-semibold">Manage this appointment</h2>
-
-          {canCancel(appointment) ? (
-            <div className="mt-4 flex flex-col gap-2.5">
-              <Link
-                href={`/book/${appointment.doctor.id}?reschedule=${appointment.bookingReference}`}
-                className={buttonClasses("outline", "md")}
-              >
-                Reschedule
-              </Link>
-              <CancelAppointment
-                reference={appointment.bookingReference}
-                professionalName={professional?.name ?? "this professional"}
-              />
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Please give the clinic as much notice as you can, so the slot can go to somebody
-                else.
-              </p>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {appointment.status === "CANCELLED"
-                ? "This appointment was cancelled. Book again to arrange a new one."
-                : "This appointment has already taken place, so there is nothing left to change."}
-            </p>
+        <div className="flex h-fit flex-col gap-5">
+          {/* Only for an appointment that can still be attended. A past or
+            cancelled one has nothing to check in to. */}
+          {canCancel(appointment) && (
+            <CheckInCard
+              reference={appointment.bookingReference}
+              confirmed={appointment.status === "CONFIRMED"}
+            />
           )}
 
-          <Link
-            href={`/professionals/${appointment.doctor.id}`}
-            className="mt-5 inline-block text-sm font-medium text-primary hover:underline"
-          >
-            View full profile
-          </Link>
-        </aside>
+          <aside className="rounded-lg border border-border bg-background p-6 shadow-soft">
+            <h2 className="font-serif text-lg font-semibold">Manage this appointment</h2>
+
+            {canCancel(appointment) ? (
+              <div className="mt-4 flex flex-col gap-2.5">
+                <Link
+                  href={`/book/${appointment.doctor.id}?reschedule=${appointment.bookingReference}`}
+                  className={buttonClasses("outline", "md")}
+                >
+                  Reschedule
+                </Link>
+                <CancelAppointment
+                  reference={appointment.bookingReference}
+                  professionalName={professional?.name ?? "this professional"}
+                />
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Please give the clinic as much notice as you can, so the slot can go to somebody
+                  else.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                {appointment.status === "CANCELLED"
+                  ? "This appointment was cancelled. Book again to arrange a new one."
+                  : "This appointment has already taken place, so there is nothing left to change."}
+              </p>
+            )}
+
+            <Link
+              href={`/professionals/${appointment.doctor.id}`}
+              className="mt-5 inline-block text-sm font-medium text-primary hover:underline"
+            >
+              View full profile
+            </Link>
+          </aside>
+        </div>
       </div>
     </div>
   );
