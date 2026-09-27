@@ -6,7 +6,9 @@ services:
     name: careconnect-web
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    # npm install rather than npm ci: the lock file is written on Windows, and npm
+    # leaves out optional packages that only Linux needs, which npm ci rejects.
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /
     envVars:
