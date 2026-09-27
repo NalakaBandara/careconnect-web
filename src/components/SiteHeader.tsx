@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { buttonClasses } from "@/components/Button";
@@ -14,8 +15,10 @@ export default async function SiteHeader() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex w-full max-w-[1216px] items-center justify-between gap-6 px-5 py-4">
-        <Link href="/" className="font-serif text-lg font-semibold">
-          CareConnect
+        {/* The alt text is the link's accessible name, so screen readers still
+            hear "CareConnect, link" exactly as they did with the text logo. */}
+        <Link href="/" className="shrink-0">
+          <Image src="/careconnect-logo.svg" alt="CareConnect" width={143} height={32} />
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm lg:flex">

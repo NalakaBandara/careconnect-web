@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 // A plain Server Component. It shows the same links to everyone, so unlike
@@ -42,7 +43,7 @@ export default function SiteFooter() {
     <footer className="mt-auto border-t border-border bg-surface">
       <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,0.65fr)] lg:gap-8">
         <div className="max-w-xs">
-          <span className="font-serif text-lg font-semibold">CareConnect</span>
+          <Image src="/careconnect-logo.svg" alt="CareConnect" width={161} height={36} />
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             CareConnect helps people find healthcare professionals and services, review what each
             clinic offers and arrange appointments in one place.
