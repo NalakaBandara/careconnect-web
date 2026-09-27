@@ -131,7 +131,11 @@ export default async function AdminAppointmentsPage({
                     <StatusBadge status={appointment.status} />
                   </td>
                   <td className="px-4 py-3">
-                    <AppointmentActions id={appointment.id} status={appointment.status} />
+                    <AppointmentActions
+                      id={appointment.id}
+                      status={appointment.status}
+                      isPast={appointment.appointmentDate < today}
+                    />
                   </td>
                 </tr>
               ))}

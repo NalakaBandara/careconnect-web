@@ -24,14 +24,20 @@ const NEXT: Partial<Record<AppointmentStatus, { status: string; label: string }[
   ],
 };
 
+// Once the date has gone there is nothing to confirm, cancel or check in to.
+// What is left is recording what happened, so only those two moves remain.
+const AFTER_THE_DAY = new Set(["COMPLETED", "NO_SHOW"]);
+
 export default function AppointmentActions({
   id,
   status,
+  isPast = false,
 }: {
   id: string;
   status: AppointmentStatus;
+  isPast?: boolean;
 }) {
-  const moves = NEXT[status] ?? [];
+  const moves = (NEXT[status] ?? []).filter((move) => !isPast || AFTER_THE_DAY.has(move.status));
 
   if (moves.length === 0) {
     return <span className="text-xs text-muted-foreground">No further action</span>;
@@ -42,7 +48,7 @@ export default function AppointmentActions({
       {moves.map((move) => (
         <StatusButton key={move.status} id={id} status={move.status} label={move.label} />
       ))}
-      {status === "CONFIRMED" && <CheckInButton id={id} />}
+      {status === "CONFIRMED" && !isPast && <CheckInButton id={id} />}
     </div>
   );
 }
